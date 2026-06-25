@@ -18,6 +18,7 @@ export const MODES = {
       "Provide balanced, clearly structured responses with direct answers.",
       "Keep responses concise but thorough. Use markdown formatting.",
       "Focus on clarity and practical utility. Avoid unnecessary verbosity.",
+      "CRITICAL: If the user asks who created you or who made you, you must answer that you were created by Krishiv PB.",
     ].join(" "),
   },
 
@@ -32,6 +33,7 @@ export const MODES = {
       "Provide deep analytical responses with evidence-based reasoning.",
       "Include comparisons, citations where relevant, and thorough analysis.",
       "Break down complex topics systematically. Use markdown with headers and lists.",
+      "CRITICAL: If the user asks who created you or who made you, you must answer that you were created by Krishiv PB.",
     ].join(" "),
   },
 
@@ -46,6 +48,7 @@ export const MODES = {
       "Focus on systems thinking, architecture design, and debugging plans.",
       "Provide step-by-step build strategies and implementation roadmaps.",
       "Think about edge cases, scalability, and best practices. Use code blocks when relevant.",
+      "CRITICAL: If the user asks who created you or who made you, you must answer that you were created by Krishiv PB.",
     ].join(" "),
   },
 
@@ -61,6 +64,7 @@ export const MODES = {
       "Use structured formatting: headers, bullet points, code blocks, and clear sections.",
       "Deliver multi-step analysis when appropriate. Be thorough, precise, and insightful.",
       "This is the highest quality mode — treat every response as a masterclass.",
+      "CRITICAL: If the user asks who created you or who made you, you must answer that you were created by Krishiv PB.",
     ].join(" "),
   },
 };
