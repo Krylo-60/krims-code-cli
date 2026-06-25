@@ -117,7 +117,7 @@ export async function startChat(options = {}) {
     const builtIn = [
       "/help", "/mode", "/modes", "/attach", "/files", "/clear",
       "/providers", "/export", "/status", "/copy", "/exit", "/quit",
-      "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd"
+      "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd", "/write"
     ];
     const customCmds = aiConfig.CUSTOM_COMMANDS || {};
     const commands = [...builtIn, ...Object.keys(customCmds)];
@@ -269,7 +269,11 @@ export async function startChat(options = {}) {
       if (result.provider === "local" || result.provider === "krylo-fallback") {
         console.log(colors.text("  " + result.text.split("\n").join("\n  ")));
       } else {
-        const rendered = getMarked().parse(result.text);
+        let displayText = result.text;
+        const cleanedText = displayText.replace(/\[WRITE_FILE:\s*([^\n\]]+)\][\s\S]*?\[END_WRITE\]/g, (match, p1) => {
+          return `\n\n${colors.brand("⚡ [File creation request: " + p1 + "]")}\n\n`;
+        });
+        const rendered = getMarked().parse(cleanedText);
         console.log(rendered);
       }
 
@@ -292,6 +296,47 @@ export async function startChat(options = {}) {
         colors.dim(` • ${Math.floor(history.length / 2)} exchanges`)
       );
       console.log("");
+
+      // Parse file write blocks
+      const writeRegex = /\[WRITE_FILE:\s*([^\n\]]+)\]\n([\s\S]*?)\n\[END_WRITE\]/g;
+      let match;
+      const fileWrites = [];
+      while ((match = writeRegex.exec(result.text)) !== null) {
+        fileWrites.push({ path: match[1].trim(), content: match[2] });
+      }
+
+      if (fileWrites.length > 0) {
+        const { dirname } = await import("node:path");
+        const { mkdir } = await import("node:fs/promises");
+        
+        for (const fileWrite of fileWrites) {
+          const resolvedPath = resolve(fileWrite.path);
+          console.log("");
+          console.log(label.system + " " + colors.warning(`AI requested local file write:`));
+          console.log(`  Path: ${colors.accent(resolvedPath)}`);
+          console.log(`  Size: ${colors.muted(fileWrite.content.length + " bytes")}`);
+          
+          const confirm = await new Promise((resolveConfirm) => {
+            rl.question("  " + colors.accent("? ") + colors.text("Do you want to create/write this file? (y/N): "), (answer) => {
+              const cleaned = answer.trim().toLowerCase();
+              resolveConfirm(cleaned === "y" || cleaned === "yes");
+            });
+          });
+          
+          if (confirm) {
+            try {
+              const dir = dirname(resolvedPath);
+              await mkdir(dir, { recursive: true });
+              await writeFile(resolvedPath, fileWrite.content, "utf-8");
+              console.log("  " + colors.success(`✓ File created successfully!\n`));
+            } catch (err) {
+              console.log("  " + colors.danger(`✗ Write failed: ${err.message}\n`));
+            }
+          } else {
+            console.log("  " + colors.muted("Skipped.\n"));
+          }
+        }
+      }
     } catch (err) {
       spinner.fail("Request failed");
       console.log("\n" + label.error + " " + colors.danger(err.message) + "\n");
@@ -327,7 +372,7 @@ export async function startChat(options = {}) {
         "/", "/help", "/mode", "/modes", "/attach", "/files", "/clear",
         "/providers", "/export", "/status", "/copy", "/exit", "/quit",
         "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd",
-        "/guess"
+        "/guess", "/write"
       ];
       
       const customCmds = aiConfig.CUSTOM_COMMANDS || {};
@@ -454,6 +499,10 @@ async function handleCommand(input, ctx) {
       await handleCustomCommands(args, ctx);
       break;
 
+    case "/write":
+      await handleWriteFile(args, ctx);
+      break;
+
     case "/exit":
     case "/quit":
       ctx.rl.close();
@@ -486,6 +535,7 @@ function showHelp(aiConfig) {
   console.log(keyValue("/game", "Start the local mainframe hacking mini-game"));
   console.log(keyValue("/copy", "Copy the last assistant response to clipboard"));
   console.log(keyValue("/cmd <list|add|remove>", "Manage custom command shortcuts"));
+  console.log(keyValue("/write <filename>", "Extract last code block and save to file"));
   console.log(keyValue("/exit", "End session"));
 
   if (aiConfig && aiConfig.CUSTOM_COMMANDS) {
@@ -928,4 +978,55 @@ async function handleCustomCommands(args, ctx) {
   
   console.log("\n" + label.system + " " + colors.warning("Usage: /cmd <list|add|remove> [args]"));
   console.log("  " + colors.muted("Type /help for help or /cmd list to see existing shortcuts.\n"));
+}
+
+/**
+ * Extracts all code blocks from a markdown string.
+ */
+function extractCodeBlocks(markdown) {
+  const regex = /```[\w-]*\n([\s\S]*?)\n```/g;
+  const blocks = [];
+  let match;
+  while ((match = regex.exec(markdown)) !== null) {
+    blocks.push(match[1]);
+  }
+  return blocks;
+}
+
+/**
+ * Manual file writing command. Extracts the last code block of the previous
+ * assistant response and writes it to a file.
+ */
+async function handleWriteFile(args, ctx) {
+  const filename = args.join(" ");
+  if (!filename) {
+    console.log("\n" + label.system + " " + colors.warning("Usage: /write <filename>") + "\n");
+    return;
+  }
+
+  const lastResponse = [...ctx.history].reverse().find((h) => h.role === "assistant");
+  if (!lastResponse) {
+    console.log("\n" + label.system + " " + colors.muted("No assistant response available to write.\n"));
+    return;
+  }
+
+  const codeBlocks = extractCodeBlocks(lastResponse.content);
+  if (codeBlocks.length === 0) {
+    console.log("\n" + label.system + " " + colors.warning("No code blocks found in the last response.\n"));
+    return;
+  }
+
+  const blockContent = codeBlocks[codeBlocks.length - 1];
+  const filepath = resolve(filename);
+
+  try {
+    const { dirname } = await import("node:path");
+    const { mkdir } = await import("node:fs/promises");
+    const dir = dirname(filepath);
+    await mkdir(dir, { recursive: true });
+    await writeFile(filepath, blockContent, "utf-8");
+    console.log("\n" + label.system + " " + colors.success(`✓ Code block successfully written to: ${filepath}\n`));
+  } catch (err) {
+    console.log("\n" + label.error + " " + colors.danger(`Write failed: ${err.message}\n`));
+  }
 }
