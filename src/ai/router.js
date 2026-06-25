@@ -26,7 +26,7 @@ import {
  * @param {object} config - Flat config object with all API keys
  * @returns {Promise<{ text: string, provider: string, model?: string, node: number, type?: string }>}
  */
-export async function routePrompt(prompt, systemPrompt, config, onToken) {
+export async function routePrompt(prompt, systemPrompt, config, onToken, history = []) {
   // ── Node 0: Local Math Solver ───────────────────────────
   const mathExpr = detectMathExpression(prompt);
   if (mathExpr) {
@@ -71,20 +71,20 @@ export async function routePrompt(prompt, systemPrompt, config, onToken) {
           result = await callOpenAICompatible(
             prompt, systemPrompt, apiKey,
             provider.baseUrl, model, provider.name,
-            onToken
+            onToken, history
           );
           break;
 
         case "custom-google":
-          result = await callGoogleGemini(prompt, systemPrompt, apiKey, model, onToken);
+          result = await callGoogleGemini(prompt, systemPrompt, apiKey, model, onToken, history);
           break;
 
         case "custom-anthropic":
-          result = await callAnthropic(prompt, systemPrompt, apiKey, model, onToken);
+          result = await callAnthropic(prompt, systemPrompt, apiKey, model, onToken, history);
           break;
 
         case "custom-cohere":
-          result = await callCohere(prompt, systemPrompt, apiKey, model, onToken);
+          result = await callCohere(prompt, systemPrompt, apiKey, model, onToken, history);
           break;
 
         default:
@@ -92,7 +92,7 @@ export async function routePrompt(prompt, systemPrompt, config, onToken) {
           result = await callOpenAICompatible(
             prompt, systemPrompt, apiKey,
             provider.baseUrl, model, provider.name,
-            onToken
+            onToken, history
           );
       }
 

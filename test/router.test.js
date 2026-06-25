@@ -171,4 +171,54 @@ test("Universal AI Router Suite", async (t) => {
     assert.ok(result.errors[0].includes("Node 1 Groq"));
     assert.ok(result.errors[1].includes("Node 2 OpenAI"));
   });
+
+  await t.test("routePrompt forwards chat history to OpenAI and Google payloads correctly", async () => {
+    const history = [
+      { role: "user", content: "What is your name?" },
+      { role: "assistant", content: "I am Aether." }
+    ];
+
+    // 1. Test Groq (OpenAI-compatible) receives history
+    globalThis.fetch = async (url, options) => {
+      fetchCalls.push({ url, options });
+      return {
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: "Groq reply" } }],
+        }),
+      };
+    };
+
+    await routePrompt("How are you?", "Sys prompt", { GROQ_API_KEY: "groq-key" }, null, history);
+    assert.strictEqual(fetchCalls.length, 1);
+    const groqBody = JSON.parse(fetchCalls[0].options.body);
+    assert.deepStrictEqual(groqBody.messages, [
+      { role: "system", content: "Sys prompt" },
+      { role: "user", content: "What is your name?" },
+      { role: "assistant", content: "I am Aether." },
+      { role: "user", content: "How are you?" }
+    ]);
+
+    fetchCalls = [];
+
+    // 2. Test Google Gemini receives history
+    globalThis.fetch = async (url, options) => {
+      fetchCalls.push({ url, options });
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: "Gemini reply" }] } }],
+        }),
+      };
+    };
+
+    await routePrompt("How are you?", "Sys prompt", { GOOGLE_API_KEYS: "google-key" }, null, history);
+    assert.strictEqual(fetchCalls.length, 1);
+    const googleBody = JSON.parse(fetchCalls[0].options.body);
+    assert.deepStrictEqual(googleBody.contents, [
+      { role: "user", parts: [{ text: "What is your name?" }] },
+      { role: "model", parts: [{ text: "I am Aether." }] },
+      { role: "user", parts: [{ text: "How are you?" }] }
+    ]);
+  });
 });

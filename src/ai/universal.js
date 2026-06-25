@@ -13,12 +13,17 @@
  * @param {string} providerName - For error messages
  * @returns {Promise<{ text: string, provider: string, model: string }>}
  */
-export async function callOpenAICompatible(prompt, systemPrompt, apiKey, baseUrl, model, providerName, onToken) {
+export async function callOpenAICompatible(prompt, systemPrompt, apiKey, baseUrl, model, providerName, onToken, history = []) {
   const isStreaming = typeof onToken === "function";
+  const formattedHistory = history.map(h => ({
+    role: h.role === "assistant" ? "assistant" : "user",
+    content: h.content
+  }));
   const body = {
     model,
     messages: [
       { role: "system", content: systemPrompt },
+      ...formattedHistory,
       { role: "user", content: prompt },
     ],
     temperature: 0.7,
@@ -116,9 +121,10 @@ export async function callOpenAICompatible(prompt, systemPrompt, apiKey, baseUrl
  * @param {string} model - Model name
  * @returns {Promise<{ text: string, provider: string, model: string }>}
  */
-export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "gemini-2.5-flash", onToken) {
+export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "gemini-2.5-flash", onToken, history = []) {
   const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
   const isStreaming = typeof onToken === "function";
+  let currentHistory = [...history];
 
   if (isStreaming) {
     let fullText = "";
@@ -128,9 +134,16 @@ export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "ge
 
     while (continuations <= MAX) {
       const url = `${BASE}/${model}:streamGenerateContent?key=${apiKey}`;
+      const formattedHistory = currentHistory.map(h => ({
+        role: h.role === "assistant" ? "model" : "user",
+        parts: [{ text: h.content }]
+      }));
       const body = {
         systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: currentPrompt }] }],
+        contents: [
+          ...formattedHistory,
+          { role: "user", parts: [{ text: currentPrompt }] }
+        ],
         generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
       };
 
@@ -144,6 +157,8 @@ export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "ge
         const errorBody = await response.text().catch(() => "");
         throw new Error(`Gemini API error (${response.status}): ${response.statusText}. ${errorBody}`);
       }
+
+      let streamedTextInThisTurn = "";
 
       if (!response.body || typeof response.body.getReader !== "function") {
         // Fallback to non-streaming if response body is not streamable (e.g. in unit tests)
@@ -164,9 +179,12 @@ export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "ge
         if (chunkText) {
           onToken(chunkText);
           fullText += chunkText;
+          streamedTextInThisTurn += chunkText;
         }
 
         if (finishReason === "MAX_TOKENS" && continuations < MAX) {
+          currentHistory.push({ role: "user", content: currentPrompt });
+          currentHistory.push({ role: "assistant", content: streamedTextInThisTurn });
           continuations++;
           currentPrompt = "Continue your previous response from exactly where you left off.";
         } else {
@@ -217,6 +235,7 @@ export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "ge
                     if (text) {
                       onToken(text);
                       fullText += text;
+                      streamedTextInThisTurn += text;
                     }
                   } catch (e) {
                     // Ignore parse errors
@@ -231,6 +250,8 @@ export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "ge
         }
 
         if (finishReason === "MAX_TOKENS" && continuations < MAX) {
+          currentHistory.push({ role: "user", content: currentPrompt });
+          currentHistory.push({ role: "assistant", content: streamedTextInThisTurn });
           continuations++;
           currentPrompt = "Continue your previous response from exactly where you left off.";
         } else {
@@ -249,9 +270,16 @@ export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "ge
 
     while (continuations <= MAX) {
       const url = `${BASE}/${model}:generateContent?key=${apiKey}`;
+      const formattedHistory = currentHistory.map(h => ({
+        role: h.role === "assistant" ? "model" : "user",
+        parts: [{ text: h.content }]
+      }));
       const body = {
         systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: currentPrompt }] }],
+        contents: [
+          ...formattedHistory,
+          { role: "user", parts: [{ text: currentPrompt }] }
+        ],
         generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
       };
 
@@ -278,6 +306,8 @@ export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "ge
       fullText += chunkText;
 
       if (candidate.finishReason === "MAX_TOKENS" && continuations < MAX) {
+        currentHistory.push({ role: "user", content: currentPrompt });
+        currentHistory.push({ role: "assistant", content: chunkText });
         continuations++;
         currentPrompt = "Continue your previous response from exactly where you left off.";
       } else {
@@ -298,14 +328,21 @@ export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "ge
  * @param {string} model - Model name
  * @returns {Promise<{ text: string, provider: string, model: string }>}
  */
-export async function callAnthropic(prompt, systemPrompt, apiKey, model = "claude-sonnet-4-20250514", onToken) {
+export async function callAnthropic(prompt, systemPrompt, apiKey, model = "claude-sonnet-4-20250514", onToken, history = []) {
   const url = "https://api.anthropic.com/v1/messages";
   const isStreaming = typeof onToken === "function";
+  const formattedHistory = history.map(h => ({
+    role: h.role === "assistant" ? "assistant" : "user",
+    content: h.content
+  }));
   const body = {
     model,
     max_tokens: 4096,
     system: systemPrompt,
-    messages: [{ role: "user", content: prompt }],
+    messages: [
+      ...formattedHistory,
+      { role: "user", content: prompt }
+    ],
     ...(isStreaming ? { stream: true } : {}),
   };
 
@@ -384,13 +421,18 @@ export async function callAnthropic(prompt, systemPrompt, apiKey, model = "claud
  * @param {string} model - Model name
  * @returns {Promise<{ text: string, provider: string, model: string }>}
  */
-export async function callCohere(prompt, systemPrompt, apiKey, model = "command-r-plus", onToken) {
+export async function callCohere(prompt, systemPrompt, apiKey, model = "command-r-plus", onToken, history = []) {
   const url = "https://api.cohere.com/v2/chat";
   const isStreaming = typeof onToken === "function";
+  const formattedHistory = history.map(h => ({
+    role: h.role === "assistant" ? "assistant" : "user",
+    content: h.content
+  }));
   const body = {
     model,
     messages: [
       { role: "system", content: systemPrompt },
+      ...formattedHistory,
       { role: "user", content: prompt },
     ],
     ...(isStreaming ? { stream: true } : {}),

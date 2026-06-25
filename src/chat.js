@@ -239,7 +239,7 @@ export async function startChat(options = {}) {
     };
 
     try {
-      const result = await routePrompt(fullPrompt, currentMode.systemPrompt, aiConfig, onToken);
+      const result = await routePrompt(fullPrompt, currentMode.systemPrompt, aiConfig, onToken, history);
       spinner.stop();
 
       // Store in history
