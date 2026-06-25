@@ -1,0 +1,47 @@
+{
+  "name": "@krylo-60/aether-ai-cli",
+  "version": "1.0.0",
+  "description": "Aether Core AI — A cyberpunk command-line AI assistant with multi-mode reasoning, 12-node failover mesh, file context injection, and offline fallbacks.",
+  "main": "src/cli.js",
+  "bin": {
+    "aether": "./bin/aether.js"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node bin/aether.js",
+    "test": "node --test test/"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "gemini",
+    "grok",
+    "xai",
+    "chatbot",
+    "aether",
+    "cyberpunk",
+    "terminal",
+    "assistant"
+  ],
+  "author": "Krishiv PB <krylobloxyt@gmail.com> (https://github.com/Krylo-60)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Krylo-60/aether-ai-cli.git"
+  },
+  "homepage": "https://github.com/Krylo-60/aether-ai-cli#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "marked": "^14.0.0",
+    "marked-terminal": "^7.2.0",
+    "ora": "^8.1.0"
+  }
+}
