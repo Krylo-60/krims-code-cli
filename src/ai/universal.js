@@ -196,15 +196,15 @@ export async function callGoogleGemini(prompt, systemPrompt, apiKey, model = "ge
         let buffer = "";
         let finishReason = "";
 
-        let braceCount = 0;
-        let jsonStart = -1;
-        let inString = false;
-        let escape = false;
-
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
+
+          let braceCount = 0;
+          let jsonStart = -1;
+          let inString = false;
+          let escape = false;
 
           for (let i = 0; i < buffer.length; i++) {
             const char = buffer[i];
