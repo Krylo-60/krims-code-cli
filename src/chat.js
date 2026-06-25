@@ -310,25 +310,27 @@ export async function startChat(options = {}) {
         const { mkdir } = await import("node:fs/promises");
         
         for (const fileWrite of fileWrites) {
-          const resolvedPath = resolve(fileWrite.path);
+          const defaultResolvedPath = resolve(fileWrite.path);
           console.log("");
           console.log(label.system + " " + colors.warning(`AI requested local file write:`));
-          console.log(`  Path: ${colors.accent(resolvedPath)}`);
-          console.log(`  Size: ${colors.muted(fileWrite.content.length + " bytes")}`);
+          console.log(`  Suggested Path: ${colors.accent(defaultResolvedPath)}`);
+          console.log(`  Size:           ${colors.muted(fileWrite.content.length + " bytes")}`);
           
-          const confirm = await new Promise((resolveConfirm) => {
-            rl.question("  " + colors.accent("? ") + colors.text("Do you want to create/write this file? (y/N): "), (answer) => {
-              const cleaned = answer.trim().toLowerCase();
-              resolveConfirm(cleaned === "y" || cleaned === "yes");
+          const targetInput = await new Promise((resolvePath) => {
+            rl.question("  " + colors.accent("? ") + colors.text("Enter path to write (or 'n' to skip, press Enter for default): "), (answer) => {
+              resolvePath(answer.trim());
             });
           });
           
-          if (confirm) {
+          const isSkip = targetInput.toLowerCase() === "n" || targetInput.toLowerCase() === "no" || targetInput.toLowerCase() === "skip" || targetInput.toLowerCase() === "cancel";
+          
+          if (!isSkip) {
+            const finalPath = targetInput === "" ? defaultResolvedPath : resolve(targetInput);
             try {
-              const dir = dirname(resolvedPath);
+              const dir = dirname(finalPath);
               await mkdir(dir, { recursive: true });
-              await writeFile(resolvedPath, fileWrite.content, "utf-8");
-              console.log("  " + colors.success(`✓ File created successfully!\n`));
+              await writeFile(finalPath, fileWrite.content, "utf-8");
+              console.log("  " + colors.success(`✓ File created successfully at: ${finalPath}\n`));
             } catch (err) {
               console.log("  " + colors.danger(`✗ Write failed: ${err.message}\n`));
             }
