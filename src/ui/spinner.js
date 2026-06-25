@@ -17,6 +17,7 @@ export function createSpinner(text) {
       frames: ["▖", "▘", "▝", "▗"],
     },
     color: "cyan",
+    discardStdin: false,
   });
 }
 
