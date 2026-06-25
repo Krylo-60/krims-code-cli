@@ -164,10 +164,51 @@ export async function configExists() {
 export function isValidConfigKey(key) {
   const upper = key.toUpperCase();
   // Accept any API key or model override
-  if (upper.endsWith("_API_KEY") || upper.endsWith("_API_KEYS") || upper.endsWith("_MODEL")) {
+  if (upper.endsWith("_API_KEY") || upper.endsWith("_API_KEYS") || upper.endsWith("_MODEL") || upper === "THEME") {
     return true;
   }
   // Accept known config keys
   const knownKeys = getAllConfigKeys();
   return knownKeys.includes(upper);
+}
+
+const HISTORY_FILE = join(CONFIG_DIR, "history.json");
+
+/**
+ * Loads chat history from disk.
+ * @returns {Promise<Array>} List of chat exchanges
+ */
+export async function loadHistory() {
+  try {
+    const raw = await readFile(HISTORY_FILE, "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Saves chat history to disk.
+ * @param {Array} history - List of chat exchanges to save
+ */
+export async function saveHistory(history) {
+  try {
+    await mkdir(CONFIG_DIR, { recursive: true });
+    // Limit saved history to last 50 entries to keep it light
+    const trimmed = history.slice(-50);
+    await writeFile(HISTORY_FILE, JSON.stringify(trimmed, null, 2), "utf-8");
+  } catch {
+    // Fail silently to not block chat
+  }
+}
+
+/**
+ * Deletes the chat history file.
+ */
+export async function clearHistory() {
+  try {
+    await unlink(HISTORY_FILE);
+  } catch {
+    // File may not exist
+  }
 }

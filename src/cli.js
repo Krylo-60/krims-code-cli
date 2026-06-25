@@ -8,7 +8,17 @@ import chalk from "chalk";
 import { Marked } from "marked";
 import { markedTerminal } from "marked-terminal";
 
-import { colors, label, separator, keyValue, bullet, clearStreamedText } from "./ui/theme.js";
+import {
+  colors,
+  label,
+  separator,
+  keyValue,
+  bullet,
+  clearStreamedText,
+  getActiveTheme,
+  setTheme,
+  getThemesList,
+} from "./ui/theme.js";
 import { createSpinner } from "./ui/spinner.js";
 import { routePrompt } from "./ai/router.js";
 import { PROVIDERS, getProvidersByTier, getActiveProviders } from "./ai/providers.js";
@@ -149,7 +159,25 @@ export function createCLI(argv) {
     .action(() => {
       handleModes();
     });
+  // ── Theme Command ───────────────────────────────────────
+  program
+    .command("theme [name]")
+    .description("Show active visual theme or switch to a new theme")
+    .action(async (name) => {
+      if (!name) {
+        await handleThemeGet();
+      } else {
+        await handleThemeSet(name);
+      }
+    });
 
+  // ── Themes Command ──────────────────────────────────────
+  program
+    .command("themes")
+    .description("List all available color themes")
+    .action(() => {
+      handleThemesList();
+    });
   // ── Status Command ──────────────────────────────────────
   program
     .command("status")
@@ -559,4 +587,32 @@ function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes}B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+async function handleThemeGet() {
+  const aiConfig = await getAIConfig();
+  const theme = aiConfig.THEME || "cyberpunk";
+  console.log("\n" + label.config + " " + colors.muted("Active Theme: ") + colors.accent(theme.toUpperCase()) + "\n");
+}
+
+async function handleThemeSet(name) {
+  const success = setTheme(name);
+  if (success) {
+    await setConfigValue("THEME", name.toLowerCase().trim());
+    console.log("\n" + label.config + " " + colors.success(`✓ Switched theme to ${name.toUpperCase()}`) + "\n");
+  } else {
+    console.log("\n" + label.error + " " + colors.danger(`Unknown theme: "${name}".`) + colors.muted(` Available: ${getThemesList().join(", ")}\n`));
+  }
+}
+
+function handleThemesList() {
+  console.log("");
+  console.log(colors.brand("  ◈ AVAILABLE COLOR THEMES"));
+  console.log(separator("─"));
+  const active = getActiveTheme();
+  for (const t of getThemesList()) {
+    const isAct = t === active ? colors.success("★ ACTIVE") : "";
+    console.log(bullet(t.toUpperCase().padEnd(14) + isAct));
+  }
+  console.log("");
 }

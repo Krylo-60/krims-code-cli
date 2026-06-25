@@ -1,33 +1,52 @@
 // ═══════════════════════════════════════════════════════════
 // AETHER AI CLI — Interactive Chat Loop
-// Universal AI Gateway Edition
+// Universal AI Gateway & Cyberpunk Command Center
 // ═══════════════════════════════════════════════════════════
 
 import { createInterface } from "node:readline";
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { exec } from "node:child_process";
 import chalk from "chalk";
 import { Marked } from "marked";
 import { markedTerminal } from "marked-terminal";
 
-import { colors, label, separator, keyValue, bullet, modeBadge, clearStreamedText } from "./ui/theme.js";
+import {
+  colors,
+  label,
+  separator,
+  keyValue,
+  bullet,
+  modeBadge,
+  clearStreamedText,
+  getActiveTheme,
+  setTheme,
+  getThemesList
+} from "./ui/theme.js";
 import { createSpinner } from "./ui/spinner.js";
 import { showBanner } from "./ui/banner.js";
 import { routePrompt } from "./ai/router.js";
 import { getActiveProviders } from "./ai/providers.js";
-import { getAIConfig } from "./config.js";
+import {
+  getAIConfig,
+  loadHistory,
+  saveHistory,
+  clearHistory,
+  setConfigValue
+} from "./config.js";
 import { MODES, DEFAULT_MODE, getModeByName } from "./modes.js";
 import { parseFile, formatContext } from "./file-parser.js";
+import { runMainframeHack } from "./ai/fallback.js";
 
 // Configure marked dynamically for terminal output
 const getMarked = () => new Marked(markedTerminal({
   reflowText: true,
   width: process.stdout.columns ? Math.max(20, process.stdout.columns - 4) : 80,
   showSectionPrefix: false,
-  code: chalk.hex("#ffb900"), // Amber/orange for code blocks
-  codespan: chalk.hex("#50fa7b"), // Neon green for inline code
-  heading: chalk.hex("#00f0ff").bold, // Neon cyan for headings
-  strong: chalk.hex("#ff79c6").bold, // Cyberpunk magenta for bold
+  code: chalk.hex(colors.orange ? "#ffb900" : "#ffb900"),
+  codespan: chalk.hex("#50fa7b"),
+  heading: chalk.hex("#00f0ff").bold,
+  strong: chalk.hex("#ff79c6").bold,
   em: chalk.italic,
   hr: chalk.hex("#44475a"),
 }));
@@ -37,21 +56,36 @@ const getMarked = () => new Marked(markedTerminal({
  * @param {{ mode?: string, preferredProvider?: string }} [options={}]
  */
 export async function startChat(options = {}) {
-  let currentMode = getModeByName(options.mode) || MODES[DEFAULT_MODE];
+  // Load AI config
+  const aiConfig = await getAIConfig();
+  
+  // Set theme from configuration
+  const theme = aiConfig.THEME || "cyberpunk";
+  setTheme(theme);
+
+  let currentMode = getModeByName(options.mode) || getModeByName(aiConfig.DEFAULT_MODE) || MODES[DEFAULT_MODE];
   let attachedFiles = [];
-  const history = [];
+  
+  // Persistent history loader
+  const history = await loadHistory();
+
+  // Mini-game state
+  const game = {
+    active: false,
+    code: "",
+    attempts: 0,
+    maxAttempts: 6,
+  };
 
   // Show banner
   showBanner(currentMode.name);
 
-  // Load AI config
-  const aiConfig = await getAIConfig();
+  // Active providers diagnostic check
   const active = getActiveProviders(aiConfig);
-
   if (active.length === 0) {
     console.log(
       "\n" + label.system + " " +
-      colors.warning("No API keys configured. Using local Krylo fallback.") + "\n" +
+      colors.warning("No API keys configured. Using local fallback solvers.") + "\n" +
       "  " + colors.muted("Run ") + colors.accent("aether setup") +
       colors.muted(" to configure providers (free options available!).\n")
     );
@@ -69,16 +103,25 @@ export async function startChat(options = {}) {
     );
   }
 
-  // Create readline interface with slash-commands autocomplete completer
+  // Display loaded history message if any
+  if (history.length > 0) {
+    console.log(
+      "  " + label.info + " " +
+      colors.muted(`Restored ${Math.floor(history.length / 2)} message exchanges from persistent logs.`) + "\n"
+    );
+  }
+
+  // Create readline interface with slash-commands autocomplete
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: colors.accent3("  ❯ "),
+    prompt: colors.accent("  ❯ "),
     terminal: true,
     completer: (line) => {
       const completions = [
         "/help", "/mode", "/modes", "/attach", "/files", "/clear",
-        "/providers", "/export", "/status", "/copy", "/exit", "/quit"
+        "/providers", "/export", "/status", "/copy", "/exit", "/quit",
+        "/theme", "/themes", "/history-clear", "/game", "/abort"
       ];
       const hits = completions.filter((c) => c.startsWith(line));
       return [hits.length ? hits : [], line];
@@ -94,6 +137,13 @@ export async function startChat(options = {}) {
       return;
     }
 
+    // ── Handle Game Input ──────────────────────────────────
+    if (game.active && !input.startsWith("/")) {
+      handleGuess(input, game);
+      rl.prompt();
+      return;
+    }
+
     // ── Handle Slash Commands ──────────────────────────────
     if (input.startsWith("/")) {
       const handled = await handleCommand(input, {
@@ -101,6 +151,7 @@ export async function startChat(options = {}) {
         attachedFiles,
         history,
         aiConfig,
+        game,
         setMode: (mode) => { currentMode = mode; },
         addFile: (file) => { attachedFiles.push(file); },
         clearFiles: () => { attachedFiles = []; },
@@ -150,6 +201,9 @@ export async function startChat(options = {}) {
         node: result.node,
         timestamp: new Date(),
       });
+
+      // Save to persistent file
+      await saveHistory(history);
 
       if (hasStartedStreaming) {
         clearStreamedText(streamedText);
@@ -217,8 +271,9 @@ async function handleCommand(input, ctx) {
       break;
 
     case "/clear":
-      ctx.clearFiles();
-      console.log("\n" + label.file + " " + colors.accent("Attached files cleared.\n"));
+      // Actual screen clear & scrollback reset
+      process.stdout.write("\x1b[2J\x1b[3J\x1b[H");
+      showBanner(ctx.currentMode.name);
       break;
 
     case "/export":
@@ -233,8 +288,36 @@ async function handleCommand(input, ctx) {
       showActiveProviders(ctx.aiConfig);
       break;
 
+    case "/theme":
+      await handleThemeSwitch(args);
+      break;
+
+    case "/themes":
+      showThemesList();
+      break;
+
+    case "/history-clear":
+      await handleHistoryClear(ctx.history);
+      break;
+
+    case "/game":
+      handleGameStart(ctx.game);
+      break;
+
+    case "/abort":
+      handleGameAbort(ctx.game);
+      break;
+
+    case "/guess":
+      if (ctx.game.active) {
+        handleGuess(args[0] || "", ctx.game);
+      } else {
+        console.log("\n" + label.system + " " + colors.warning("Game is not active. Type /game to start.\n"));
+      }
+      break;
+
     case "/copy":
-      handleCopy(ctx.history);
+      await handleCopy(ctx.history);
       break;
 
     case "/exit":
@@ -257,13 +340,16 @@ function showHelp() {
   console.log(keyValue("/help", "Show this help menu"));
   console.log(keyValue("/mode <name>", "Switch mode (synthesis, research, architect, titan)"));
   console.log(keyValue("/modes", "List all modes with signal metrics"));
+  console.log(keyValue("/theme <name>", "Switch visual theme (cyberpunk, matrix, synthwave, crimson)"));
+  console.log(keyValue("/themes", "List available visual themes"));
   console.log(keyValue("/attach <path>", "Attach a file for context"));
   console.log(keyValue("/files", "List attached files"));
-  console.log(keyValue("/clear", "Remove all attached files"));
+  console.log(keyValue("/clear", "Clear terminal screen and reprint banner"));
   console.log(keyValue("/providers", "Show active AI providers"));
   console.log(keyValue("/export", "Export conversation to file"));
-  console.log(keyValue("/status", "Session status"));
-  console.log(keyValue("/copy", "Show last AI response"));
+  console.log(keyValue("/history-clear", "Clear saved persistent chat history"));
+  console.log(keyValue("/game", "Start the local mainframe hacking mini-game"));
+  console.log(keyValue("/copy", "Copy the last assistant response to clipboard"));
   console.log(keyValue("/exit", "End session"));
   console.log("");
 }
@@ -373,6 +459,7 @@ function showStatus(ctx) {
   console.log("");
   console.log(colors.brand("  ◈ SESSION STATUS"));
   console.log(separator("─"));
+  console.log(keyValue("  Theme", getActiveTheme().toUpperCase()));
   console.log(keyValue("  Mode", ctx.currentMode.label));
   console.log(keyValue("  Layer", ctx.currentMode.layer));
   console.log(keyValue("  Exchanges", String(Math.floor(ctx.history.length / 2))));
@@ -401,19 +488,168 @@ function showActiveProviders(aiConfig) {
   console.log("");
 }
 
-function handleCopy(history) {
+async function handleThemeSwitch(args) {
+  const themeName = args[0];
+  if (!themeName) {
+    console.log("\n" + label.system + " " + colors.warning("Usage: /theme <theme-name>. Type /themes to list themes.\n"));
+    return;
+  }
+
+  const success = setTheme(themeName);
+  if (success) {
+    await setConfigValue("THEME", themeName.toLowerCase().trim());
+    console.log("\n" + label.system + " " + colors.success(`✓ Theme switched to ${themeName.toUpperCase()}`));
+    console.log("  " + colors.muted("Visual grid modulates synchronized.\n"));
+  } else {
+    console.log("\n" + label.system + " " + colors.danger(`Unknown theme: "${themeName}".`) + " " + colors.muted(`Available: ${getThemesList().join(", ")}\n`));
+  }
+}
+
+function showThemesList() {
+  console.log("");
+  console.log(colors.brand("  ◈ AVAILABLE COLOR THEMES"));
+  console.log(separator("─"));
+  for (const t of getThemesList()) {
+    const activeText = t === getActiveTheme() ? colors.success("★ ACTIVE") : "";
+    console.log(bullet(t.toUpperCase().padEnd(14) + activeText));
+  }
+  console.log("");
+}
+
+async function handleHistoryClear(history) {
+  await clearHistory();
+  history.length = 0;
+  console.log("\n" + label.system + " " + colors.success("✓ Persistent chat history cleared successfully.\n"));
+}
+
+function handleGameStart(game) {
+  if (game.active) {
+    console.log("\n" + label.system + " " + colors.warning("Mainframe breach is already in progress. Type /abort to cancel.\n"));
+    return;
+  }
+
+  // Set up game
+  game.active = true;
+  game.attempts = 0;
+  
+  // Generate random 4-digit code
+  const code = Array.from({ length: 4 }, () => Math.floor(Math.random() * 10)).join("");
+  game.code = code;
+
+  const rules = runMainframeHack();
+  console.log("\n" + rules.text + "\n");
+}
+
+function handleGameAbort(game) {
+  if (!game.active) {
+    console.log("\n" + label.system + " " + colors.warning("No security breach in progress.\n"));
+    return;
+  }
+  game.active = false;
+  console.log("\n" + label.system + " " + colors.warning("Breach protocol aborted. Connection terminated.\n"));
+}
+
+function handleGuess(input, game) {
+  const guess = input.trim();
+  if (!/^\d{4}$/.test(guess)) {
+    console.log("\n" + label.error + " " + colors.danger("BREACH ERROR: Code must be exactly 4 digits (0-9).") + "\n");
+    return;
+  }
+
+  game.attempts++;
+  
+  const codeArr = game.code.split("");
+  const guessArr = guess.split("");
+  
+  let hits = 0;
+  let closes = 0;
+  
+  const codeUsed = [false, false, false, false];
+  const guessUsed = [false, false, false, false];
+
+  // First pass: Hits
+  for (let i = 0; i < 4; i++) {
+    if (guessArr[i] === codeArr[i]) {
+      hits++;
+      codeUsed[i] = true;
+      guessUsed[i] = true;
+    }
+  }
+
+  // Second pass: Closes
+  for (let i = 0; i < 4; i++) {
+    if (guessUsed[i]) continue;
+    for (let j = 0; j < 4; j++) {
+      if (codeUsed[j]) continue;
+      if (guessArr[i] === codeArr[j]) {
+        closes++;
+        codeUsed[j] = true;
+        break;
+      }
+    }
+  }
+
+  console.log("");
+  console.log(colors.magenta(`   [BREACH ATTEMPT #${game.attempts} / ${game.maxAttempts}]`));
+  console.log(colors.text(`   BREACH INPUT:  ${guess.split("").join(" ")}`));
+  console.log(colors.success(`   HITS (Pos):    ${"█ ".repeat(hits)}${"░ ".repeat(4 - hits)} (${hits})`));
+  console.log(colors.warning(`   CLOSE (Val):   ${"█ ".repeat(closes)}${"░ ".repeat(4 - closes)} (${closes})`));
+  console.log("");
+
+  if (hits === 4) {
+    console.log(label.system + " " + colors.success("MAINFRAME BYPASSED! Access granted. Decryption complete. 🔓\n"));
+    game.active = false;
+  } else if (game.attempts >= game.maxAttempts) {
+    console.log(label.error + " " + colors.danger("SECURITY SHUTDOWN! Mainframe locked out. Intrusion logged. 🔒"));
+    console.log("   Intrusion PIN was: " + colors.accent(game.code) + "\n");
+    game.active = false;
+  } else {
+    console.log(colors.muted("   Recalibrating security bypass codes...") + "\n");
+  }
+}
+
+async function handleCopy(history) {
   const lastResponse = [...history].reverse().find((h) => h.role === "assistant");
   if (!lastResponse) {
     console.log("\n" + label.system + " " + colors.muted("No response to copy yet.\n"));
     return;
   }
 
-  console.log("\n" + label.system + " " + colors.muted("Last response:"));
-  console.log(colors.text(lastResponse.content.slice(0, 500)));
-  if (lastResponse.content.length > 500) {
-    console.log(colors.dim("  [... truncated, use /export for full text]"));
+  try {
+    await copyToClipboard(lastResponse.content);
+    console.log("\n" + label.system + " " + colors.success("✓ Last response copied to OS Clipboard successfully!\n"));
+  } catch (err) {
+    console.log("\n" + label.system + " " + colors.muted("Unable to copy automatically. Displaying content below:"));
+    console.log(colors.text(lastResponse.content.slice(0, 800)));
+    if (lastResponse.content.length > 800) {
+      console.log(colors.dim("  [... truncated, use /export to save full conversation]"));
+    }
+    console.log("");
   }
-  console.log("");
+}
+
+function copyToClipboard(text) {
+  return new Promise((resolve, reject) => {
+    let command;
+    if (process.platform === "win32") {
+      command = "clip";
+    } else if (process.platform === "darwin") {
+      command = "pbcopy";
+    } else {
+      command = "xclip -selection clipboard || xsel -ib";
+    }
+
+    try {
+      const child = exec(command, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+      child.stdin.write(text);
+      child.stdin.end();
+    } catch (e) {
+      reject(e);
+    }
+  });
 }
 
 // ── Utilities ───────────────────────────────────────────────
@@ -444,8 +680,8 @@ function providerBadge(result) {
 function signalBar(name, value) {
   const filled = Math.round(value / 10);
   const empty = 10 - filled;
-  const bar = chalk.hex("#6ce8ff")("█".repeat(filled)) + chalk.hex("#1a2a3a")("░".repeat(empty));
-  return `${colors.dim(name.padEnd(10))} ${bar} ${colors.muted(value + "%")}`;
+  const bar = colors.accent("█".repeat(filled)) + colors.dim("░".repeat(empty));
+  return `${colors.muted(name.padEnd(10))} ${bar} ${colors.muted(value + "%")}`;
 }
 
 function formatBytes(bytes) {

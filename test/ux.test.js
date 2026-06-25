@@ -1,6 +1,6 @@
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
-import { separator, clearStreamedText } from "../src/ui/theme.js";
+import { separator, clearStreamedText, getActiveTheme, setTheme, getThemesList } from "../src/ui/theme.js";
 import { createSpinner } from "../src/ui/spinner.js";
 import { routePrompt } from "../src/ai/router.js";
 
@@ -99,5 +99,30 @@ test("Cyberpunk UX and Streaming Suite", async (t) => {
     // Verify options body has stream: true
     const sentBody = JSON.parse(fetchCalls[0].options.body);
     assert.strictEqual(sentBody.stream, true);
+  });
+
+  await t.test("Theme switching functions manage state correctly", () => {
+    // 1. Initial active theme should be cyberpunk
+    assert.strictEqual(getActiveTheme(), "cyberpunk");
+
+    // 2. Switch to matrix
+    const success = setTheme("matrix");
+    assert.strictEqual(success, true);
+    assert.strictEqual(getActiveTheme(), "matrix");
+
+    // 3. Switch to invalid theme should return false and not change theme
+    const fail = setTheme("nonexistent-theme");
+    assert.strictEqual(fail, false);
+    assert.strictEqual(getActiveTheme(), "matrix");
+
+    // 4. Get all themes list
+    const list = getThemesList();
+    assert.ok(list.includes("cyberpunk"));
+    assert.ok(list.includes("matrix"));
+    assert.ok(list.includes("synthwave"));
+    assert.ok(list.includes("crimson"));
+
+    // Reset back to cyberpunk
+    setTheme("cyberpunk");
   });
 });

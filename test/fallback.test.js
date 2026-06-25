@@ -4,6 +4,7 @@ import {
   detectMathExpression,
   solveMath,
   generateKryloReply,
+  runMainframeHack,
 } from "../src/ai/fallback.js";
 
 test("Offline Math Fallback & Krylo Suite", async (t) => {
@@ -81,5 +82,24 @@ test("Offline Math Fallback & Krylo Suite", async (t) => {
     const reply = generateKryloReply("Unrelated query");
     assert.strictEqual(reply.type, "krylo-local");
     assert.ok(reply.text.includes("[KRYLO TERMINAL RESPONSE]"));
+  });
+
+  await t.test("detectMathExpression and solveMath support trig, logs, square root and constants", () => {
+    assert.strictEqual(detectMathExpression("sin(pi / 2)"), "sin(pi/2)");
+    assert.strictEqual(detectMathExpression("sqrt(9) + abs(-5)"), "sqrt(9)+abs(-5)");
+    
+    const resTrig = solveMath("sin(pi/2)");
+    assert.ok(resTrig);
+    assert.ok(resTrig.text.includes("Result: 1"));
+
+    const resComplex = solveMath("sqrt(9) + abs(-5)");
+    assert.ok(resComplex);
+    assert.ok(resComplex.text.includes("Result: 8"));
+  });
+
+  await t.test("runMainframeHack returns the game intro template", () => {
+    const gameIntro = runMainframeHack();
+    assert.strictEqual(gameIntro.type, "mainframe-game");
+    assert.ok(gameIntro.text.includes("Objective: Bypass security"));
   });
 });

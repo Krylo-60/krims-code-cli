@@ -22,6 +22,9 @@ const {
   getAIConfig,
   configExists,
   isValidConfigKey,
+  loadHistory,
+  saveHistory,
+  clearHistory,
 } = await import("../src/config.js");
 
 const { getAllConfigKeys } = await import("../src/ai/providers.js");
@@ -140,6 +143,29 @@ test("Configuration Loading Suite", async (t) => {
     assert.strictEqual(isValidConfigKey("CUSTOM_API_KEY"), true);
     assert.strictEqual(isValidConfigKey("OPENAI_MODEL"), true);
     assert.strictEqual(isValidConfigKey("GOOGLE_API_KEYS"), true);
+    assert.strictEqual(isValidConfigKey("THEME"), true);
     assert.strictEqual(isValidConfigKey("INVALID_KEY_NAME"), false);
+  });
+
+  await t.test("loadHistory, saveHistory, and clearHistory write and delete log files", async () => {
+    // 1. Initial state: history should be empty
+    const initial = await loadHistory();
+    assert.deepStrictEqual(initial, []);
+
+    // 2. Save history
+    const testHistory = [
+      { role: "user", content: "ping" },
+      { role: "assistant", content: "pong" }
+    ];
+    await saveHistory(testHistory);
+    
+    // 3. Load back
+    const loaded = await loadHistory();
+    assert.deepStrictEqual(loaded, testHistory);
+
+    // 4. Clear history
+    await clearHistory();
+    const cleared = await loadHistory();
+    assert.deepStrictEqual(cleared, []);
   });
 });
