@@ -3,6 +3,9 @@ import { join } from "node:path";
 import { mkdir, rm } from "node:fs/promises";
 import { test, before, after, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
+import { readFileSync } from "node:fs";
+
+const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 
 // Redirect homedir before importing config and updater to point to a temporary test folder
 const tempHome = join(process.cwd(), "temp-test-home-updater");
@@ -49,7 +52,7 @@ test("Auto-Updater & Highlights Suite", async (t) => {
     // Set last check to 1 hour ago
     await setConfigValue("LAST_UPDATE_CHECK", (now - 60 * 60 * 1000).toString());
     // Set last notified version to current version so highlights are not triggered
-    await setConfigValue("LAST_NOTIFIED_VERSION", "1.1.9"); // hardcoded or matching package.json
+    await setConfigValue("LAST_NOTIFIED_VERSION", pkg.version);
 
     let fetchCalled = false;
     globalThis.fetch = async () => {

@@ -46,6 +46,8 @@ import { parseFile, formatContext } from "./file-parser.js";
 import { runMainframeHack } from "./ai/fallback.js";
 import { AGENT_INSTRUCTIONS } from "./agent.js";
 import { checkForUpdates } from "./updater.js";
+import { getSessionTokenStats, getBreakdownByModel, resetSessionTokenStats } from "./ai/tokens.js";
+
 
 
 // Configure marked dynamically for terminal output
@@ -71,6 +73,10 @@ export async function startChat(options = {}) {
   
   // Run update check
   await checkForUpdates();
+
+  // Reset token stats for the new session
+  resetSessionTokenStats();
+
   
   // Set theme from configuration
   const theme = aiConfig.THEME || "cyberpunk";
@@ -130,7 +136,7 @@ export async function startChat(options = {}) {
       "/help", "/mode", "/modes", "/attach", "/files", "/clear",
       "/providers", "/export", "/status", "/copy", "/exit", "/quit",
       "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd", "/write",
-      "/commit", "/run", "/history", "/autopilot"
+      "/commit", "/run", "/history", "/autopilot", "/tokens"
     ];
     const customCmds = aiConfig.CUSTOM_COMMANDS || {};
     const commands = [...builtIn, ...Object.keys(customCmds)];
@@ -303,11 +309,19 @@ export async function startChat(options = {}) {
           }
         }
 
+        const showTokens = aiConfig.SHOW_TOKENS !== "false";
+        let tokensText = "";
+        if (showTokens && result.usage) {
+          const { promptTokens, completionTokens } = result.usage;
+          tokensText = ` • ${promptTokens.toLocaleString()} in / ${completionTokens.toLocaleString()} out tokens`;
+        }
+
         console.log(separator("─"));
         console.log(
           "  " + colors.dim(`Node ${result.node} • ${result.provider}`) +
           (result.model ? colors.dim(` • ${result.model}`) : "") +
           colors.dim(` • ${elapsedSec}s${speedText}`) +
+          colors.dim(tokensText) +
           colors.dim(` • ${Math.floor(history.length / 2)} exchanges`)
         );
         console.log("");
@@ -409,7 +423,7 @@ export async function startChat(options = {}) {
         "/", "/help", "/mode", "/modes", "/attach", "/files", "/clear",
         "/providers", "/export", "/status", "/copy", "/exit", "/quit",
         "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd",
-        "/guess", "/write", "/commit", "/run", "/history", "/autopilot"
+        "/guess", "/write", "/commit", "/run", "/history", "/autopilot", "/tokens"
       ];
       
       const customCmds = aiConfig.CUSTOM_COMMANDS || {};
@@ -556,6 +570,10 @@ async function handleCommand(input, ctx) {
       await handleAutopilotSwitch(args, ctx);
       break;
 
+    case "/tokens":
+      await handleTokensDisplay(ctx);
+      break;
+
     case "/exit":
     case "/quit":
       ctx.rl.close();
@@ -587,6 +605,7 @@ function showHelp(aiConfig) {
   console.log(keyValue("/history", "List, switch, and resume past interactive chat sessions"));
   console.log(keyValue("/history-clear", "Clear saved persistent chat history"));
   console.log(keyValue("/autopilot <mode>", "View or switch agent autopilot level (off, safe, workspace, machine)"));
+  console.log(keyValue("/tokens", "View detailed session token usage and exchanges telemetry"));
   console.log(keyValue("/game", "Start the local mainframe hacking mini-game"));
   console.log(keyValue("/copy", "Copy the last assistant response to clipboard"));
   console.log(keyValue("/cmd <list|add|remove>", "Manage custom command shortcuts"));
@@ -1126,7 +1145,7 @@ async function handleCustomCommands(args, ctx) {
     const builtIn = [
       "/help", "/mode", "/modes", "/attach", "/files", "/clear",
       "/providers", "/export", "/status", "/copy", "/exit", "/quit",
-      "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd", "/guess"
+      "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd", "/guess", "/tokens"
     ];
     
     if (builtIn.includes(name.toLowerCase())) {
@@ -1337,4 +1356,41 @@ async function handleRunCommand(args, ctx) {
       resolve();
     });
   });
+}
+
+/**
+ * Interactive display of session token usage statistics.
+ */
+async function handleTokensDisplay(ctx) {
+  const stats = getSessionTokenStats();
+  const breakdown = getBreakdownByModel();
+
+  console.log("\n" + separator("━"));
+  console.log(colors.accent.bold("  ★  AETHER SESSION TOKEN TELEMETRY  ★"));
+  console.log(separator("─"));
+
+  const models = Object.keys(breakdown);
+  if (models.length === 0) {
+    console.log(colors.muted("  No queries executed in this session yet."));
+  } else {
+    // Print header
+    console.log(
+      colors.brand("  " + "Model".padEnd(35) + "Prompt".padStart(10) + "Completion".padStart(12) + "Total".padStart(10))
+    );
+    console.log(colors.dim("  " + "─".repeat(67)));
+    for (const [model, data] of Object.entries(breakdown)) {
+      const truncatedModel = model.length > 33 ? model.slice(0, 30) + "..." : model;
+      console.log(
+        "  " + colors.text(truncatedModel.padEnd(35)) +
+        colors.brand(data.prompt.toLocaleString().padStart(10)) +
+        colors.brand(data.completion.toLocaleString().padStart(12)) +
+        colors.accent.bold(data.total.toLocaleString().padStart(10))
+      );
+    }
+  }
+
+  console.log(separator("─"));
+  console.log("  " + colors.accent("Total Exchanges:") + colors.text(` ${stats.exchanges}`));
+  console.log("  " + colors.accent("Total Tokens:") + colors.text(`    Prompt: ${stats.prompt.toLocaleString()} | Completion: ${stats.completion.toLocaleString()} | Sum: `) + colors.brand.bold(stats.total.toLocaleString()));
+  console.log(separator("━") + "\n");
 }

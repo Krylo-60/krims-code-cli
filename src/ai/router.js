@@ -11,6 +11,7 @@ import {
   callAnthropic,
   callCohere,
 } from "./universal.js";
+import { estimateTokens, recordTokenUsage } from "./tokens.js";
 
 /**
  * Routes a prompt through the universal AI failover mesh.
@@ -32,7 +33,10 @@ export async function routePrompt(prompt, systemPrompt, config, onToken, history
   if (mathExpr) {
     const mathResult = solveMath(mathExpr);
     if (mathResult) {
-      return { ...mathResult, provider: "local", node: 0 };
+      const pTokens = estimateTokens(systemPrompt + prompt);
+      const cTokens = estimateTokens(mathResult.text);
+      const usage = recordTokenUsage("local-math", pTokens, cTokens);
+      return { ...mathResult, provider: "local", node: 0, usage };
     }
   }
 
@@ -54,7 +58,10 @@ export async function routePrompt(prompt, systemPrompt, config, onToken, history
   // ── No providers configured → Krylo ────────────────────
   if (active.length === 0) {
     const kryloReply = generateKryloReply(prompt);
-    return { ...kryloReply, provider: "krylo-fallback", node: 0 };
+    const pTokens = estimateTokens(systemPrompt + prompt);
+    const cTokens = estimateTokens(kryloReply.text);
+    const usage = recordTokenUsage("krylo-local", pTokens, cTokens);
+    return { ...kryloReply, provider: "krylo-fallback", node: 0, usage };
   }
 
   // ── Try each provider in order ──────────────────────────
@@ -96,7 +103,11 @@ export async function routePrompt(prompt, systemPrompt, config, onToken, history
           );
       }
 
-      return { ...result, node: nodeIndex };
+      const pTokens = estimateTokens(systemPrompt + prompt + history.map(h => h.content).join(""));
+      const cTokens = estimateTokens(result.text);
+      const usage = recordTokenUsage(result.model, pTokens, cTokens);
+
+      return { ...result, node: nodeIndex, usage };
     } catch (err) {
       errors.push(`[Node ${nodeIndex} ${provider.name}] ${err.message}`);
       nodeIndex++;
@@ -105,10 +116,14 @@ export async function routePrompt(prompt, systemPrompt, config, onToken, history
 
   // ── Final Fallback: Krylo Companion ─────────────────────
   const kryloReply = generateKryloReply(prompt);
+  const pTokens = estimateTokens(systemPrompt + prompt + history.map(h => h.content).join(""));
+  const cTokens = estimateTokens(kryloReply.text);
+  const usage = recordTokenUsage("krylo-local", pTokens, cTokens);
   return {
     ...kryloReply,
     provider: "krylo-fallback",
     node: 0,
     errors,
+    usage,
   };
 }
