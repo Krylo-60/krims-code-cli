@@ -1,6 +1,6 @@
 {
   "name": "@krishivpb60/aether-ai-cli",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Aether Core AI — A cyberpunk command-line AI assistant with multi-mode reasoning, 12-node failover mesh, file context injection, and offline fallbacks.",
   "main": "src/cli.js",
   "bin": {

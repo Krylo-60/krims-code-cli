@@ -25,6 +25,9 @@ const {
   loadHistory,
   saveHistory,
   clearHistory,
+  listSessions,
+  switchSession,
+  startNewSession,
 } = await import("../src/config.js");
 
 const { getAllConfigKeys } = await import("../src/ai/providers.js");
@@ -168,6 +171,30 @@ test("Configuration Loading Suite", async (t) => {
     await clearHistory();
     const cleared = await loadHistory();
     assert.deepStrictEqual(cleared, []);
+  });
+
+  await t.test("listSessions, switchSession, and startNewSession handle multi-session histories", async () => {
+    // 1. Start new session
+    const file1 = startNewSession();
+    await saveHistory([{ role: "user", content: "session 1" }], "research");
+
+    // 2. Start another new session
+    const file2 = startNewSession();
+    await saveHistory([{ role: "user", content: "session 2" }], "architect");
+
+    // 3. List sessions
+    const sessions = listSessions();
+    assert.ok(sessions.length >= 2);
+    // The most recent session (file2) should be first
+    assert.strictEqual(sessions[0].file, file2);
+    assert.strictEqual(sessions[0].mode, "architect");
+    assert.strictEqual(sessions[1].file, file1);
+    assert.strictEqual(sessions[1].mode, "research");
+
+    // 4. Switch session back to file1
+    switchSession(file1);
+    const loaded = await loadHistory();
+    assert.strictEqual(loaded[0].content, "session 1");
   });
 
   await t.test("getAIConfig supports and loads CUSTOM_COMMANDS correctly", async () => {

@@ -3,7 +3,8 @@
 // ═══════════════════════════════════════════════════════════
 
 import { readFile, stat } from "node:fs/promises";
-import { resolve, extname, basename } from "node:path";
+import { readdirSync, statSync } from "node:fs";
+import { resolve, extname, basename, join, relative } from "node:path";
 
 const MAX_CONTENT_LENGTH = 30000;
 
@@ -91,4 +92,50 @@ function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes}B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+const EXCLUDE_DIRS = new Set([
+  "node_modules", ".git", ".agents", "build", "dist", ".github",
+  "aether_pip", "aether_ai_agent_cli.egg-info", "aether_ai_cli.egg-info"
+]);
+
+/**
+ * Recursively scans baseDir and returns a list of supported files.
+ * @param {string} baseDir - Directory to scan
+ * @returns {string[]} List of relative file paths
+ */
+export function scanWorkspaceFiles(baseDir) {
+  const files = [];
+
+  function recurse(dir) {
+    let entries;
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      if (EXCLUDE_DIRS.has(entry)) continue;
+      const fullPath = join(dir, entry);
+      let stats;
+      try {
+        stats = statSync(fullPath);
+      } catch {
+        continue;
+      }
+
+      if (stats.isDirectory()) {
+        recurse(fullPath);
+      } else if (stats.isFile()) {
+        const ext = extname(entry).toLowerCase();
+        if (SUPPORTED_EXTENSIONS.has(ext)) {
+          files.push(relative(baseDir, fullPath));
+        }
+      }
+    }
+  }
+
+  recurse(baseDir);
+  return files.sort();
 }

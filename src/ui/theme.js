@@ -269,11 +269,6 @@ export function getThemesList() {
   return Object.keys(THEMES);
 }
 
-/**
- * Strips markdown code block fences (```lang ... ```) from a string if present.
- * @param {string} content - Raw content extracted from file write blocks
- * @returns {string} Cleaned content
- */
 export function stripCodeFences(content) {
   let cleaned = content.trim();
   if (cleaned.startsWith("```")) {
@@ -288,4 +283,206 @@ export function stripCodeFences(content) {
     }
   }
   return cleaned.trim();
+}
+
+/**
+ * Interactive checkbox selector inside terminal using raw stdin. Renders scrollable pagination.
+ * Arrow Up/Down to navigate, Space to toggle, Enter to confirm, Esc/q to abort.
+ */
+export async function interactiveCheckbox(headerText, items, preselected = []) {
+  if (items.length === 0) return [];
+
+  const stdin = process.stdin;
+  const stdout = process.stdout;
+  
+  const wasRaw = stdin.isRaw;
+  stdin.setRawMode(true);
+  stdin.resume();
+  stdin.setEncoding("utf8");
+
+  stdout.write("\x1b[?25l"); // Hide cursor
+
+  let activeIndex = 0;
+  const selected = new Set(preselected.map(item => items.indexOf(item)).filter(i => i !== -1));
+  
+  const PAGE_SIZE = 10;
+  let startRow = 0;
+  let renderedLines = 0;
+
+  function render() {
+    if (renderedLines > 0) {
+      stdout.write(`\x1b[${renderedLines}A\x1b[J`);
+    }
+
+    let lines = [];
+    lines.push(colors.brand(headerText));
+
+    if (activeIndex < startRow) {
+      startRow = activeIndex;
+    } else if (activeIndex >= startRow + PAGE_SIZE) {
+      startRow = activeIndex - PAGE_SIZE + 1;
+    }
+
+    const visibleEnd = Math.min(items.length, startRow + PAGE_SIZE);
+    for (let i = startRow; i < visibleEnd; i++) {
+      const isActive = i === activeIndex;
+      const isSelected = selected.has(i);
+
+      const pointer = isActive ? colors.accent("❯ ") : "  ";
+      const checkbox = isSelected 
+        ? colors.success("[⬢] ") 
+        : colors.muted("[⬡] ");
+      
+      const itemText = isActive 
+        ? colors.brand(items[i]) 
+        : colors.text(items[i]);
+
+      lines.push(pointer + checkbox + itemText);
+    }
+
+    if (items.length > PAGE_SIZE) {
+      lines.push(colors.dim(`  (Arrow Keys, Page ${Math.floor(startRow/PAGE_SIZE) + 1}/${Math.ceil(items.length/PAGE_SIZE)})`));
+    }
+
+    const outputStr = lines.join("\n") + "\n";
+    stdout.write(outputStr);
+    renderedLines = lines.length;
+  }
+
+  render();
+
+  return new Promise((resolve) => {
+    function handleKey(key) {
+      if (key === "\u0003" || key === "\u001b" || key === "q") { // Ctrl+C, Esc, q
+        cleanup();
+        resolve(null);
+        return;
+      }
+
+      if (key === "\r" || key === "\n") { // Enter
+        cleanup();
+        resolve([...selected].map(i => items[i]));
+        return;
+      }
+
+      if (key === " ") { // Spacebar
+        if (selected.has(activeIndex)) {
+          selected.delete(activeIndex);
+        } else {
+          selected.add(activeIndex);
+        }
+        render();
+        return;
+      }
+
+      if (key === "\u001b[A") { // Up Arrow
+        activeIndex = (activeIndex - 1 + items.length) % items.length;
+        render();
+      } else if (key === "\u001b[B") { // Down Arrow
+        activeIndex = (activeIndex + 1) % items.length;
+        render();
+      }
+    }
+
+    function cleanup() {
+      stdin.removeListener("data", handleKey);
+      stdin.setRawMode(wasRaw);
+      stdin.pause();
+      stdout.write("\x1b[?25h"); // Show cursor
+    }
+
+    stdin.on("data", handleKey);
+  });
+}
+
+/**
+ * Interactive single-select menu selector inside terminal. Renders scrollable pagination.
+ * Arrow Up/Down to navigate, Enter to select, Esc/q to abort.
+ */
+export async function interactiveMenu(headerText, items) {
+  if (items.length === 0) return null;
+
+  const stdin = process.stdin;
+  const stdout = process.stdout;
+  
+  const wasRaw = stdin.isRaw;
+  stdin.setRawMode(true);
+  stdin.resume();
+  stdin.setEncoding("utf8");
+
+  stdout.write("\x1b[?25l"); // Hide cursor
+
+  let activeIndex = 0;
+  const PAGE_SIZE = 10;
+  let startRow = 0;
+  let renderedLines = 0;
+
+  function render() {
+    if (renderedLines > 0) {
+      stdout.write(`\x1b[${renderedLines}A\x1b[J`);
+    }
+
+    let lines = [];
+    lines.push(colors.brand(headerText));
+
+    if (activeIndex < startRow) {
+      startRow = activeIndex;
+    } else if (activeIndex >= startRow + PAGE_SIZE) {
+      startRow = activeIndex - PAGE_SIZE + 1;
+    }
+
+    const visibleEnd = Math.min(items.length, startRow + PAGE_SIZE);
+    for (let i = startRow; i < visibleEnd; i++) {
+      const isActive = i === activeIndex;
+      const pointer = isActive ? colors.accent("❯ ") : "  ";
+      const itemText = isActive 
+        ? colors.success(items[i]) 
+        : colors.text(items[i]);
+
+      lines.push(pointer + itemText);
+    }
+
+    if (items.length > PAGE_SIZE) {
+      lines.push(colors.dim(`  (Page ${Math.floor(startRow/PAGE_SIZE) + 1}/${Math.ceil(items.length/PAGE_SIZE)})`));
+    }
+
+    const outputStr = lines.join("\n") + "\n";
+    stdout.write(outputStr);
+    renderedLines = lines.length;
+  }
+
+  render();
+
+  return new Promise((resolve) => {
+    function handleKey(key) {
+      if (key === "\u0003" || key === "\u001b" || key === "q") { // Ctrl+C, Esc, q
+        cleanup();
+        resolve(null);
+        return;
+      }
+
+      if (key === "\r" || key === "\n") { // Enter
+        cleanup();
+        resolve(activeIndex);
+        return;
+      }
+
+      if (key === "\u001b[A") { // Up Arrow
+        activeIndex = (activeIndex - 1 + items.length) % items.length;
+        render();
+      } else if (key === "\u001b[B") { // Down Arrow
+        activeIndex = (activeIndex + 1) % items.length;
+        render();
+      }
+    }
+
+    function cleanup() {
+      stdin.removeListener("data", handleKey);
+      stdin.setRawMode(wasRaw);
+      stdin.pause();
+      stdout.write("\x1b[?25h"); // Show cursor
+    }
+
+    stdin.on("data", handleKey);
+  });
 }

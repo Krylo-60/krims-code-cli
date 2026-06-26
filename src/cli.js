@@ -202,6 +202,14 @@ export function createCLI(argv) {
       await handleSetup();
     });
 
+  // ── Commit Command ──────────────────────────────────────
+  program
+    .command("commit")
+    .description("Generate conventional commit message from git diff and commit changes")
+    .action(async () => {
+      await handleCommit();
+    });
+
   // ── Default: Show help ──────────────────────────────────
   program.action(() => {
     showMiniBanner();
@@ -567,6 +575,86 @@ async function handleStatus() {
   console.log(keyValue("    Active Nodes", `${totalNodes}`));
   console.log(keyValue("    Mesh Status", active.length > 0 ? colors.success("✓ Online") : colors.warning("⚠ Local Only")));
   console.log("");
+}
+
+async function handleCommit() {
+  const { getGitDiff, runGitCommit } = await import("./git.js");
+  const { createInterface } = await import("node:readline/promises");
+
+  try {
+    const { diff, isStaged } = await getGitDiff();
+    if (!diff) {
+      console.log("\n" + label.system + " " + colors.warning("No staged or unstaged changes detected. Stage your files using 'git add' first.\n"));
+      return;
+    }
+
+    if (!isStaged) {
+      const rlInit = createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      const stageAnswer = await rlInit.question("\n" + label.system + " " + colors.warning("No staged changes found. Do you want to stage all changes automatically? [y/N]: "));
+      rlInit.close();
+
+      if (stageAnswer.toLowerCase().trim() === "y" || stageAnswer.toLowerCase().trim() === "yes") {
+        const { exec } = await import("node:child_process");
+        const { promisify } = await import("node:util");
+        const execAsync = promisify(exec);
+        await execAsync("git add .");
+        console.log(label.system + " " + colors.success("Staged all changes successfully."));
+      } else {
+        console.log("\n" + label.system + " " + colors.muted("Aborted. Please stage files using 'git add' first.\n"));
+        return;
+      }
+    }
+
+    const aiConfig = await getAIConfig();
+    const mode = MODES[DEFAULT_MODE];
+
+    console.log("");
+    console.log(label.system + " " + colors.brand("Reading git diff and generating conventional commit message..."));
+    console.log("");
+
+    const systemPrompt = "You are an expert developer assistant. Generate a concise, clear, and professional conventional commit message (e.g., 'feat: add login page', 'fix: resolve buffer overflow') based on the provided git diff. Output ONLY the commit message itself on a single line, with absolutely no backticks, markdown, explanations, prefix, or introductory text.";
+    const userPrompt = `Here is the git diff:\n\n${diff}`;
+
+    let firstToken = true;
+    let commitMessage = "";
+    const onToken = (token) => {
+      if (firstToken) {
+        firstToken = false;
+        process.stdout.write(label.aether + " Suggested Commit Message: " + colors.success(token));
+      } else {
+        process.stdout.write(colors.success(token));
+      }
+      commitMessage += token;
+    };
+
+    const result = await routePrompt(userPrompt, mode.systemPrompt, aiConfig, onToken);
+    console.log("\n");
+
+    const cleanMessage = result.text.trim().replace(/^`+|`+$/g, ""); // strip quotes/backticks
+
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    const answer = await rl.question(colors.muted("Commit with this message? [Y/n]: "));
+    rl.close();
+
+    if (answer.toLowerCase().trim() === "n" || answer.toLowerCase().trim() === "no") {
+      console.log("\n" + label.system + " " + colors.muted("Commit aborted.\n"));
+      return;
+    }
+
+    console.log("\n" + label.system + " " + colors.brand("Executing git commit..."));
+    const output = await runGitCommit(cleanMessage);
+    console.log("\n" + colors.success(output) + "\n");
+
+  } catch (err) {
+    console.log("\n" + label.error + " " + colors.danger(err.message) + "\n");
+  }
 }
 
 async function handleSetup() {

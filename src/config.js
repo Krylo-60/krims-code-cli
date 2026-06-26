@@ -5,6 +5,15 @@
 // ═══════════════════════════════════════════════════════════
 
 import { readFile, writeFile, mkdir, unlink, access } from "node:fs/promises";
+import {
+  existsSync,
+  readdirSync,
+  statSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  unlinkSync
+} from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { getAllConfigKeys } from "./ai/providers.js";
@@ -164,7 +173,7 @@ export async function configExists() {
 export function isValidConfigKey(key) {
   const upper = key.toUpperCase();
   // Accept any API key or model override
-  if (upper.endsWith("_API_KEY") || upper.endsWith("_API_KEYS") || upper.endsWith("_MODEL") || upper === "THEME" || upper === "CUSTOM_COMMANDS") {
+  if (upper.endsWith("_API_KEY") || upper.endsWith("_API_KEYS") || upper.endsWith("_MODEL") || upper === "THEME" || upper === "CUSTOM_COMMANDS" || upper === "AUTOPILOT") {
     return true;
   }
   // Accept known config keys
@@ -172,7 +181,143 @@ export function isValidConfigKey(key) {
   return knownKeys.includes(upper);
 }
 
-const HISTORY_FILE = join(CONFIG_DIR, "history.json");
+const HISTORY_DIR = join(CONFIG_DIR, "history");
+const LEGACY_HISTORY_FILE = join(CONFIG_DIR, "history.json");
+
+let currentSessionFile = null;
+
+/**
+ * Gets the current active session file path, initializing it if necessary.
+ * @returns {string}
+ */
+export function getSessionFile() {
+  if (currentSessionFile) {
+    return currentSessionFile;
+  }
+
+  try {
+    if (!existsSync(HISTORY_DIR)) {
+      mkdirSync(HISTORY_DIR, { recursive: true });
+    }
+
+    const files = readdirSync(HISTORY_DIR).filter(
+      (f) => f.startsWith("session_") && f.endsWith(".json")
+    );
+
+    if (files.length > 0) {
+      // Sort files descending by modification time
+      files.sort((a, b) => {
+        return statSync(join(HISTORY_DIR, b)).mtimeMs - statSync(join(HISTORY_DIR, a)).mtimeMs;
+      });
+      currentSessionFile = join(HISTORY_DIR, files[0]);
+    } else {
+      // If legacy history file exists, migrate it
+      if (existsSync(LEGACY_HISTORY_FILE)) {
+        const timestamp = statSync(LEGACY_HISTORY_FILE).mtimeMs || Date.now();
+        currentSessionFile = join(HISTORY_DIR, `session_${timestamp}.json`);
+        try {
+          const raw = readFileSync(LEGACY_HISTORY_FILE, "utf-8");
+          const legacyData = JSON.parse(raw);
+          const sessionData = {
+            mode: "titan",
+            timestamp,
+            messages: Array.isArray(legacyData) ? legacyData : (legacyData.messages || []),
+          };
+          writeFileSync(currentSessionFile, JSON.stringify(sessionData, null, 2), "utf-8");
+          try {
+            unlinkSync(LEGACY_HISTORY_FILE);
+          } catch {
+            // ignore unlink error
+          }
+        } catch {
+          // ignore parsing error, start new
+          startNewSession();
+        }
+      } else {
+        startNewSession();
+      }
+    }
+  } catch {
+    startNewSession();
+  }
+
+  return currentSessionFile;
+}
+
+/**
+ * Starts a new chat session.
+ * @returns {string} Path to the new session file
+ */
+export function startNewSession() {
+  const timestamp = Date.now();
+  currentSessionFile = join(HISTORY_DIR, `session_${timestamp}.json`);
+  try {
+    if (!existsSync(HISTORY_DIR)) {
+      mkdirSync(HISTORY_DIR, { recursive: true });
+    }
+    const sessionData = {
+      mode: "titan",
+      timestamp,
+      messages: [],
+    };
+    writeFileSync(currentSessionFile, JSON.stringify(sessionData, null, 2), "utf-8");
+  } catch {
+    // Fail silently
+  }
+  return currentSessionFile;
+}
+
+/**
+ * Lists all session logs.
+ * @returns {Array} List of sessions with metadata
+ */
+export function listSessions() {
+  try {
+    if (!existsSync(HISTORY_DIR)) {
+      mkdirSync(HISTORY_DIR, { recursive: true });
+    }
+    const files = readdirSync(HISTORY_DIR).filter(
+      (f) => f.startsWith("session_") && f.endsWith(".json")
+    );
+    const sessions = [];
+
+    for (const file of files) {
+      const fullPath = join(HISTORY_DIR, file);
+      try {
+        const raw = readFileSync(fullPath, "utf-8");
+        const data = JSON.parse(raw);
+        const messages = Array.isArray(data) ? data : (data.messages || []);
+        const mode = Array.isArray(data) ? "titan" : (data.mode || "titan");
+        const timestamp = Array.isArray(data)
+          ? (statSync(fullPath).mtimeMs || Date.now())
+          : (data.timestamp || statSync(fullPath).mtimeMs || Date.now());
+
+        sessions.push({
+          file: fullPath,
+          filename: file,
+          timestamp,
+          mode,
+          messages,
+        });
+      } catch {
+        // ignore corrupt files
+      }
+    }
+
+    sessions.sort((a, b) => b.timestamp - a.timestamp);
+    return sessions;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Switches the active session file.
+ * @param {string} sessionFile
+ */
+export function switchSession(sessionFile) {
+  currentSessionFile = sessionFile;
+}
 
 /**
  * Loads chat history from disk.
@@ -180,8 +325,10 @@ const HISTORY_FILE = join(CONFIG_DIR, "history.json");
  */
 export async function loadHistory() {
   try {
-    const raw = await readFile(HISTORY_FILE, "utf-8");
-    return JSON.parse(raw);
+    const file = getSessionFile();
+    const raw = readFileSync(file, "utf-8");
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : (data.messages || []);
   } catch {
     return [];
   }
@@ -190,24 +337,54 @@ export async function loadHistory() {
 /**
  * Saves chat history to disk.
  * @param {Array} history - List of chat exchanges to save
+ * @param {string} [mode] - Current mode name
  */
-export async function saveHistory(history) {
+export async function saveHistory(history, mode) {
   try {
-    await mkdir(CONFIG_DIR, { recursive: true });
-    // Limit saved history to last 50 entries to keep it light
+    const file = getSessionFile();
+    let timestamp = Date.now();
+    const match = file.match(/session_(\d+)\.json$/);
+    if (match) {
+      timestamp = parseInt(match[1], 10);
+    }
     const trimmed = history.slice(-50);
-    await writeFile(HISTORY_FILE, JSON.stringify(trimmed, null, 2), "utf-8");
+    
+    let finalMode = mode;
+    if (!finalMode) {
+      try {
+        const raw = readFileSync(file, "utf-8");
+        const data = JSON.parse(raw);
+        if (!Array.isArray(data)) {
+          finalMode = data.mode;
+        }
+      } catch {
+        // file might not exist yet
+      }
+    }
+    if (!finalMode) {
+      finalMode = "titan";
+    }
+
+    const sessionData = {
+      mode: finalMode,
+      timestamp,
+      messages: trimmed,
+    };
+
+    writeFileSync(file, JSON.stringify(sessionData, null, 2), "utf-8");
   } catch {
     // Fail silently to not block chat
   }
 }
 
 /**
- * Deletes the chat history file.
+ * Deletes the current chat history file.
  */
 export async function clearHistory() {
   try {
-    await unlink(HISTORY_FILE);
+    const file = getSessionFile();
+    unlinkSync(file);
+    currentSessionFile = null;
   } catch {
     // File may not exist
   }

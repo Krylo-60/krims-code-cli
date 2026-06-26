@@ -24,7 +24,8 @@ import {
   stripCodeFences,
   getActiveTheme,
   setTheme,
-  getThemesList
+  getThemesList,
+  interactiveMenu
 } from "./ui/theme.js";
 import { createSpinner } from "./ui/spinner.js";
 import { showBanner } from "./ui/banner.js";
@@ -35,11 +36,15 @@ import {
   loadHistory,
   saveHistory,
   clearHistory,
-  setConfigValue
+  setConfigValue,
+  listSessions,
+  switchSession,
+  startNewSession
 } from "./config.js";
 import { MODES, DEFAULT_MODE, getModeByName } from "./modes.js";
 import { parseFile, formatContext } from "./file-parser.js";
 import { runMainframeHack } from "./ai/fallback.js";
+import { AGENT_INSTRUCTIONS } from "./agent.js";
 
 // Configure marked dynamically for terminal output
 const getMarked = () => new Marked(markedTerminal({
@@ -119,7 +124,8 @@ export async function startChat(options = {}) {
     const builtIn = [
       "/help", "/mode", "/modes", "/attach", "/files", "/clear",
       "/providers", "/export", "/status", "/copy", "/exit", "/quit",
-      "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd", "/write"
+      "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd", "/write",
+      "/commit", "/run", "/history", "/autopilot"
     ];
     const customCmds = aiConfig.CUSTOM_COMMANDS || {};
     const commands = [...builtIn, ...Object.keys(customCmds)];
@@ -220,115 +226,151 @@ export async function startChat(options = {}) {
       fullPrompt = `${contexts}\n\n${promptText}`;
     }
 
-    // ── Query AI ──────────────────────────────────────────
-    const queryStartTime = Date.now();
-    let firstTokenTime = 0;
-    const spinner = createSpinner(
-      colors.muted(`Routing through mesh ${currentMode.label}...`)
-    );
-    spinner.start();
+    // Append AGENT_INSTRUCTIONS to mode systemPrompt
+    const systemPrompt = currentMode.systemPrompt + "\n" + AGENT_INSTRUCTIONS;
 
-    let hasStartedStreaming = false;
-    let streamedText = "";
-    const filter = new StreamFilter(process.stdout.write.bind(process.stdout));
-    const onToken = (token) => {
-      if (!hasStartedStreaming) {
-        hasStartedStreaming = true;
-        firstTokenTime = Date.now();
-        spinner.stop();
-      }
-      filter.write(token);
-      streamedText += token;
-    };
+    let loopCount = 0;
+    const MAX_LOOPS = 5;
+    let currentQueryPrompt = fullPrompt;
+    let aiResponseText = "";
+    let lastResult = null;
 
     try {
-      const result = await routePrompt(fullPrompt, currentMode.systemPrompt, aiConfig, onToken, history);
-      spinner.stop();
-      filter.flush();
+      while (loopCount < MAX_LOOPS) {
+        const queryStartTime = Date.now();
+        let firstTokenTime = 0;
 
-      // Store in history
-      history.push({ role: "user", content: originalInput, timestamp: new Date() });
-      history.push({
-        role: "assistant",
-        content: result.text,
-        provider: result.provider,
-        model: result.model,
-        node: result.node,
-        timestamp: new Date(),
-      });
-
-      // Save to persistent file
-      await saveHistory(history);
-
-      if (hasStartedStreaming) {
-        clearStreamedText(filter.filteredText);
-      }
-
-      // Display response
-      console.log("");
-      console.log(label.aether + " " + providerBadge(result));
-      console.log(separator("─"));
-      console.log("");
-
-      if (result.provider === "local" || result.provider === "krylo-fallback") {
-        console.log(colors.text("  " + result.text.split("\n").join("\n  ")));
-      } else {
-        let displayText = result.text;
-        const cleanedText = displayText.replace(/\[WRITE_FILE:\s*([^\n\]]+)\][\s\S]*?\[END_WRITE\]/g, (match, p1) => {
-          return `\n\n${colors.brand("⚡ [File creation request: " + p1 + "]")}\n\n`;
-        });
-        const rendered = getMarked().parse(cleanedText);
-        console.log(rendered);
-      }
-
-      const elapsedSec = ((Date.now() - queryStartTime) / 1000).toFixed(1);
-      let speedText = "";
-      if (firstTokenTime > 0) {
-        const streamElapsed = (Date.now() - firstTokenTime) / 1000;
-        if (streamElapsed > 0.05) {
-          const estimatedTokens = Math.max(1, Math.round(streamedText.length / 4));
-          const tps = (estimatedTokens / streamElapsed).toFixed(1);
-          speedText = ` • ${tps} tok/s`;
+        if (loopCount > 0) {
+          console.log(colors.accent(`\n🤖 [Aether Autopilot Mode - Iteration ${loopCount + 1}/${MAX_LOOPS}]`));
         }
-      }
 
-      console.log(separator("─"));
-      console.log(
-        "  " + colors.dim(`Node ${result.node} • ${result.provider}`) +
-        (result.model ? colors.dim(` • ${result.model}`) : "") +
-        colors.dim(` • ${elapsedSec}s${speedText}`) +
-        colors.dim(` • ${Math.floor(history.length / 2)} exchanges`)
-      );
-      console.log("");
+        const spinner = createSpinner(
+          colors.muted(loopCount === 0 ? `Routing through mesh ${currentMode.label}...` : `Agent executing tasks...`)
+        );
+        spinner.start();
 
-      // Parse file write blocks
-      const writeRegex = /\[WRITE_FILE:\s*([^\n\]]+)\]\n([\s\S]*?)\n\[END_WRITE\]/g;
-      let match;
-      const fileWrites = [];
-      while ((match = writeRegex.exec(result.text)) !== null) {
-        fileWrites.push({ path: match[1].trim(), content: stripCodeFences(match[2]) });
-      }
+        let hasStartedStreaming = false;
+        let streamedText = "";
+        const filter = new StreamFilter(process.stdout.write.bind(process.stdout));
+        const onToken = (token) => {
+          if (!hasStartedStreaming) {
+            hasStartedStreaming = true;
+            firstTokenTime = Date.now();
+            spinner.stop();
+          }
+          filter.write(token);
+          streamedText += token;
+        };
 
-      if (fileWrites.length > 0) {
-        const { dirname } = await import("node:path");
-        const { mkdir } = await import("node:fs/promises");
-        
-        for (const fileWrite of fileWrites) {
-          const finalPath = resolve(fileWrite.path);
-          console.log("");
-          console.log(label.system + " " + colors.warning(`Auto-Writing File: ${colors.accent(finalPath)} (${fileWrite.content.length} bytes)`));
-          try {
-            const dir = dirname(finalPath);
-            await mkdir(dir, { recursive: true });
-            await writeFile(finalPath, fileWrite.content, "utf-8");
-            console.log("  " + colors.success(`✓ File created successfully!\n`));
-          } catch (err) {
-            console.log("  " + colors.danger(`✗ Write failed: ${err.message}\n`));
+        const result = await routePrompt(currentQueryPrompt, systemPrompt, aiConfig, onToken, history);
+        spinner.stop();
+        filter.flush();
+
+        aiResponseText = result.text;
+        lastResult = result;
+
+        if (hasStartedStreaming) {
+          clearStreamedText(filter.filteredText);
+        }
+
+        // Display response
+        console.log("");
+        console.log(label.aether + " " + providerBadge(result));
+        console.log(separator("─"));
+        console.log("");
+
+        if (result.provider === "local" || result.provider === "krylo-fallback") {
+          console.log(colors.text("  " + result.text.split("\n").join("\n  ")));
+        } else {
+          let displayText = result.text;
+          const rendered = getMarked().parse(displayText);
+          console.log(rendered);
+        }
+
+        const elapsedSec = ((Date.now() - queryStartTime) / 1000).toFixed(1);
+        let speedText = "";
+        if (firstTokenTime > 0) {
+          const streamElapsed = (Date.now() - firstTokenTime) / 1000;
+          if (streamElapsed > 0.05) {
+            const estimatedTokens = Math.max(1, Math.round(streamedText.length / 4));
+            const tps = (estimatedTokens / streamElapsed).toFixed(1);
+            speedText = ` • ${tps} tok/s`;
           }
         }
+
+        console.log(separator("─"));
+        console.log(
+          "  " + colors.dim(`Node ${result.node} • ${result.provider}`) +
+          (result.model ? colors.dim(` • ${result.model}`) : "") +
+          colors.dim(` • ${elapsedSec}s${speedText}`) +
+          colors.dim(` • ${Math.floor(history.length / 2)} exchanges`)
+        );
+        console.log("");
+
+        // Process any agent tools output by the AI
+        const { processAgentBlocks } = await import("./agent.js");
+        const toolResults = await processAgentBlocks(aiResponseText, aiConfig, rl);
+
+        if (toolResults.length === 0) {
+          // No tools executed, end loop
+          break;
+        }
+
+        // Store this turn in history so AI knows what happened
+        history.push({ role: "user", content: currentQueryPrompt, timestamp: new Date() });
+        history.push({
+          role: "assistant",
+          content: aiResponseText,
+          provider: result.provider,
+          model: result.model,
+          node: result.node,
+          timestamp: new Date(),
+        });
+        await saveHistory(history, currentMode.name);
+
+        // Format tool outputs as next prompt
+        let formattedResults = "### Agent Tool Outputs:\n";
+        for (const tr of toolResults) {
+          if (tr.success) {
+            if (tr.tool === "RUN_COMMAND") {
+              formattedResults += `\n- RUN_COMMAND "${tr.arg}" succeeded. Output:\n\`\`\`\n${tr.stdout || ""}${tr.stderr || ""}\n\`\`\`;`;
+            } else if (tr.tool === "READ_FILE") {
+              formattedResults += `\n- READ_FILE "${tr.arg}" succeeded. File Content:\n\`\`\`\n${tr.content}\n\`\`\`;`;
+            } else if (tr.tool === "WRITE_FILE") {
+              formattedResults += `\n- WRITE_FILE "${tr.arg}" succeeded.`;
+            } else if (tr.tool === "SEARCH_WEB") {
+              const resultsList = tr.results.map((r, i) => `${i+1}. [${r.title}](${r.url})\n   ${r.snippet}`).join("\n");
+              formattedResults += `\n- SEARCH_WEB "${tr.arg}" succeeded. Results:\n${resultsList}`;
+            }
+          } else {
+            formattedResults += `\n- ${tr.tool} "${tr.arg}" failed: ${tr.error}`;
+          }
+        }
+        formattedResults += "\n\nPlease continue and finalize your task or perform next steps.";
+
+        currentQueryPrompt = formattedResults;
+        loopCount++;
       }
+
+      // Store final state in history
+      if (loopCount > 0) {
+        // Just save to disk to persist
+        await saveHistory(history, currentMode.name);
+      } else {
+        // Standard single-turn save
+        history.push({ role: "user", content: originalInput, timestamp: new Date() });
+        history.push({
+          role: "assistant",
+          content: aiResponseText,
+          provider: lastResult.provider,
+          model: lastResult.model,
+          node: lastResult.node,
+          timestamp: new Date(),
+        });
+        await saveHistory(history, currentMode.name);
+      }
+
     } catch (err) {
-      spinner.fail("Request failed");
       console.log("\n" + label.error + " " + colors.danger(err.message) + "\n");
     }
 
@@ -362,7 +404,7 @@ export async function startChat(options = {}) {
         "/", "/help", "/mode", "/modes", "/attach", "/files", "/clear",
         "/providers", "/export", "/status", "/copy", "/exit", "/quit",
         "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd",
-        "/guess", "/write"
+        "/guess", "/write", "/commit", "/run", "/history", "/autopilot"
       ];
       
       const customCmds = aiConfig.CUSTOM_COMMANDS || {};
@@ -493,6 +535,22 @@ async function handleCommand(input, ctx) {
       await handleWriteFile(args, ctx);
       break;
 
+    case "/commit":
+      await handleCommitInsideChat(ctx);
+      break;
+
+    case "/run":
+      await handleRunCommand(args, ctx);
+      break;
+
+    case "/history":
+      await handleHistorySwitch(ctx);
+      break;
+
+    case "/autopilot":
+      await handleAutopilotSwitch(args, ctx);
+      break;
+
     case "/exit":
     case "/quit":
       ctx.rl.close();
@@ -521,11 +579,15 @@ function showHelp(aiConfig) {
   console.log(keyValue("/clear", "Clear terminal screen and reprint banner"));
   console.log(keyValue("/providers", "Show active AI providers"));
   console.log(keyValue("/export", "Export conversation to file"));
+  console.log(keyValue("/history", "List, switch, and resume past interactive chat sessions"));
   console.log(keyValue("/history-clear", "Clear saved persistent chat history"));
+  console.log(keyValue("/autopilot <mode>", "View or switch agent autopilot level (off, safe, workspace, machine)"));
   console.log(keyValue("/game", "Start the local mainframe hacking mini-game"));
   console.log(keyValue("/copy", "Copy the last assistant response to clipboard"));
   console.log(keyValue("/cmd <list|add|remove>", "Manage custom command shortcuts"));
   console.log(keyValue("/write <filename>", "Extract last code block and save to file"));
+  console.log(keyValue("/commit", "Generate conventional commit message and commit changes"));
+  console.log(keyValue("/run <command>", "Execute a shell command interactively"));
   console.log(keyValue("/exit", "End session"));
 
   if (aiConfig && aiConfig.CUSTOM_COMMANDS) {
@@ -584,9 +646,48 @@ function showModes() {
 }
 
 async function handleAttach(args, ctx) {
-  const filePath = args.join(" ");
+  const filePath = args.join(" ").trim();
   if (!filePath) {
-    console.log("\n" + label.file + " " + colors.warning("Usage: /attach <path-to-file>\n"));
+    const { scanWorkspaceFiles } = await import("./file-parser.js");
+    const { interactiveCheckbox } = await import("./ui/theme.js");
+
+    const workspaceFiles = scanWorkspaceFiles(process.cwd());
+    if (workspaceFiles.length === 0) {
+      console.log("\n" + label.file + " " + colors.muted("No supported files found in this workspace.\n"));
+      return;
+    }
+
+    ctx.rl.pause();
+    const selected = await interactiveCheckbox(
+      "Attach files (Arrow Keys to navigate, Space to toggle, Enter to confirm, Esc/q to cancel):\n",
+      workspaceFiles,
+      ctx.attachedFiles.map(f => f.relativePath || f.name)
+    );
+    ctx.rl.resume();
+
+    if (selected === null) {
+      console.log("\n" + label.file + " " + colors.muted("Selection canceled.\n"));
+      return;
+    }
+
+    ctx.clearFiles();
+    if (selected.length === 0) {
+      console.log("\n" + label.file + " " + colors.success("Cleared all attachments.\n"));
+      return;
+    }
+
+    let successCount = 0;
+    for (const file of selected) {
+      try {
+        const fileData = await parseFile(file);
+        fileData.relativePath = file;
+        ctx.addFile(fileData);
+        successCount++;
+      } catch (err) {
+        console.log(label.error + " " + colors.danger(`Failed to attach ${file}: ${err.message}`));
+      }
+    }
+    console.log("\n" + label.file + " " + colors.success(`Successfully attached ${successCount} file(s).\n`));
     return;
   }
 
@@ -711,6 +812,100 @@ async function handleHistoryClear(history, rl) {
   history.length = 0;
   if (rl) rl.history = [];
   console.log("\n" + label.system + " " + colors.success("✓ Persistent chat history and prompt history cleared.\n"));
+}
+
+async function handleAutopilotSwitch(args, ctx) {
+  const setting = args[0]?.toLowerCase().trim();
+  if (!setting) {
+    const current = (ctx.aiConfig.AUTOPILOT || "off").toUpperCase();
+    console.log("\n" + label.system + " " + colors.brand("🤖 AUTOPILOT AGENT CONFIGURATION"));
+    console.log(separator("─"));
+    console.log(keyValue("  Current Setting", current));
+    console.log("");
+    console.log("  " + colors.muted("Available Modes:"));
+    console.log("    • " + colors.accent("off") + colors.text("       - Always ask user for confirmation before executing any actions."));
+    console.log("    • " + colors.accent("safe") + colors.text("      - Run read-only/safe terminal commands and searches automatically."));
+    console.log("    • " + colors.accent("workspace") + colors.text(" - Run any actions automatically if they stay inside the workspace."));
+    console.log("    • " + colors.accent("machine") + colors.text("   - Complete autopilot. Run any action automatically (Full access)."));
+    console.log("");
+    console.log("  " + colors.muted("To change setting: ") + colors.accent("/autopilot <mode>") + "\n");
+    return;
+  }
+
+  const valid = ["off", "safe", "workspace", "machine"];
+  if (!valid.includes(setting)) {
+    console.log("\n" + label.system + " " + colors.danger(`ERROR: Unknown autopilot mode "${setting}".`) + " " + colors.muted("Choose from: off, safe, workspace, machine.\n"));
+    return;
+  }
+
+  await setConfigValue("AUTOPILOT", setting);
+  ctx.aiConfig.AUTOPILOT = setting;
+  console.log("\n" + label.system + " " + colors.success(`✓ Autopilot setting updated to ${setting.toUpperCase()} successfully.\n`));
+}
+
+async function handleHistorySwitch(ctx) {
+  const sessions = listSessions();
+  if (sessions.length === 0) {
+    console.log("\n" + label.system + " " + colors.muted("No past chat sessions found.\n"));
+    return;
+  }
+
+  const items = sessions.map((s) => {
+    const dateStr = new Date(s.timestamp).toLocaleString();
+    const count = s.messages.length;
+    const exchanges = Math.floor(count / 2);
+    // Find first user query preview
+    const firstQuery = s.messages.find((m) => m.role === "user")?.content || "Empty conversation";
+    const preview = firstQuery.length > 50 ? firstQuery.slice(0, 47) + "..." : firstQuery;
+    const modeBadgeText = `[${s.mode}]`;
+    return `${colors.dim(dateStr)} ${colors.brand(modeBadgeText.padEnd(12))} ${colors.muted(exchanges + " exch")} • ${colors.text(preview)}`;
+  });
+
+  // Add an option to start a new session
+  items.push(colors.accent("➕ Start a new chat session"));
+
+  ctx.rl.pause();
+  const selectedIndex = await interactiveMenu(
+    "Select a past chat session to resume (Arrow Keys to navigate, Enter to select, Esc/q to cancel):\n",
+    items
+  );
+  ctx.rl.resume();
+
+  if (selectedIndex === null) {
+    console.log("\n" + label.system + " " + colors.muted("Selection canceled.\n"));
+    return;
+  }
+
+  // Clear screen and load the selected session
+  process.stdout.write("\x1b[2J\x1b[3J\x1b[H");
+
+  if (selectedIndex === sessions.length) {
+    // Start new session
+    const newSessionFile = startNewSession();
+    ctx.history.length = 0;
+    showBanner(ctx.currentMode.name);
+    console.log("\n" + label.system + " " + colors.success("Started a new chat session.\n"));
+  } else {
+    const selectedSession = sessions[selectedIndex];
+    switchSession(selectedSession.file);
+    
+    // Load history
+    const loadedHistory = await loadHistory();
+    ctx.history.length = 0;
+    for (const msg of loadedHistory) {
+      ctx.history.push(msg);
+    }
+    
+    showBanner(ctx.currentMode.name);
+    console.log("\n" + label.system + " " + colors.success(`✓ Switched to chat session from ${new Date(selectedSession.timestamp).toLocaleString()}`));
+    console.log("  " + colors.muted(`Restored ${Math.floor(ctx.history.length / 2)} message exchanges.\n`));
+  }
+
+  // Sync shell's recall history list
+  const userQueries = ctx.history
+    .filter((h) => h.role === "user")
+    .map((h) => h.content);
+  ctx.rl.history = [...new Set(userQueries)].reverse();
 }
 
 function handleGameStart(game) {
@@ -1014,9 +1209,127 @@ async function handleWriteFile(args, ctx) {
     const { mkdir } = await import("node:fs/promises");
     const dir = dirname(filepath);
     await mkdir(dir, { recursive: true });
-    await writeFile(filepath, blockContent, "utf-8");
-    console.log("\n" + label.system + " " + colors.success(`✓ Code block successfully written to: ${filepath}\n`));
+    await writeFile(filepath, blockContent, \"utf-8\");
+    console.log(\"\\n\" + label.system + \" \" + colors.success(`✓ Code block successfully written to: ${filepath}\\n`));
   } catch (err) {
-    console.log("\n" + label.error + " " + colors.danger(`Write failed: ${err.message}\n`));
+    console.log(\"\\n\" + label.error + \" \" + colors.danger(`Write failed: ${err.message}\\n`));
   }
+}
+
+/**
+ * Interactive git commit command inside chat loop.
+ */
+async function handleCommitInsideChat(ctx) {
+  const { getGitDiff, runGitCommit } = await import(\"./git.js\");
+  const { exec } = await import(\"node:child_process\");
+  const { promisify } = await import(\"node:util\");
+  const execAsync = promisify(exec);
+
+  try {
+    const { diff, isStaged } = await getGitDiff();
+    if (!diff) {
+      console.log(\"\\n\" + label.system + \" \" + colors.warning(\"No staged or unstaged changes detected. Stage your files using 'git add' first.\\n\"));
+      return;
+    }
+
+    if (!isStaged) {
+      ctx.rl.pause();
+      const stageAnswer = await new Promise((resolve) => {
+        ctx.rl.question(colors.warning(\"\\nNo staged changes found. Do you want to stage all changes automatically? [y/N]: \"), resolve);
+      });
+      ctx.rl.resume();
+
+      if (stageAnswer.toLowerCase().trim() === \"y\" || stageAnswer.toLowerCase().trim() === \"yes\") {
+        await execAsync(\"git add .\");
+        console.log(label.system + \" \" + colors.success(\"Staged all changes successfully.\"));
+      } else {
+        console.log(\"\\n\" + label.system + \" \" + colors.muted(\"Aborted. Please stage files using 'git add' first.\\n\"));
+        return;
+      }
+    }
+
+    console.log(\"\\n\" + label.system + \" \" + colors.brand(\"Reading git diff and generating conventional commit message...\"));
+    console.log(\"\");
+
+    const systemPrompt = \"You are an expert developer assistant. Generate a concise, clear, and professional conventional commit message (e.g., 'feat: add login page', 'fix: resolve buffer overflow') based on the provided git diff. Output ONLY the commit message itself on a single line, with absolutely no backticks, markdown, explanations, prefix, or introductory text.\";
+    const userPrompt = `Here is the git diff:\n\n${diff}`;
+
+    let firstToken = true;
+    let commitMessage = "";
+    const onToken = (token) => {
+      if (firstToken) {
+        firstToken = false;
+        process.stdout.write(label.aether + \" Suggested Commit Message: \" + colors.success(token));
+      } else {
+        process.stdout.write(colors.success(token));
+      }
+      commitMessage += token;
+    };
+
+    const result = await routePrompt(userPrompt, systemPrompt, ctx.aiConfig, onToken);
+    console.log(\"\\n\");
+
+    const cleanMessage = result.text.trim().replace(/^`+|`+$/g, \"\"); // strip quotes/backticks
+
+    ctx.rl.pause();
+    const answer = await new Promise((resolve) => {
+      ctx.rl.question(colors.muted(\"Commit with this message? [Y/n]: \"), resolve);
+    });
+    ctx.rl.resume();
+
+    if (answer.toLowerCase().trim() === "n" || answer.toLowerCase().trim() === "no") {
+      console.log("\n" + label.system + " " + colors.muted("Commit aborted.\n"));
+      return;
+    }
+
+    console.log("\n" + label.system + " " + colors.brand("Executing git commit..."));
+    const output = await runGitCommit(cleanMessage);
+    console.log("\n" + colors.success(output) + "\n");
+
+  } catch (err) {
+    console.log("\n" + label.error + " " + colors.danger(err.message) + "\n");
+  }
+}
+
+/**
+ * Sandboxed interactive shell command execution.
+ */
+async function handleRunCommand(args, ctx) {
+  const command = args.join(" ").trim();
+  if (!command) {
+    console.log("\n" + label.system + " " + colors.warning("Usage: /run <command>\n"));
+    return;
+  }
+
+  const { spawn } = await import("node:child_process");
+
+  console.log("\n" + label.system + " " + colors.brand(`Running command: ${command}`));
+  console.log(separator("─") + "\n");
+
+  ctx.rl.pause();
+
+  return new Promise((resolve) => {
+    const isWindows = process.platform === "win32";
+    const shell = isWindows ? "cmd.exe" : "/bin/sh";
+    const shellArgs = isWindows ? ["/c", command] : ["-c", command];
+
+    const child = spawn(shell, shellArgs, { stdio: "inherit" });
+
+    child.on("close", (code) => {
+      ctx.rl.resume();
+      console.log("\n" + separator("─"));
+      if (code === 0) {
+        console.log(label.system + " " + colors.success(`✓ Command exited successfully (code 0).\n`));
+      } else {
+        console.log(label.system + " " + colors.danger(`✗ Command failed with exit status ${code}.\n`));
+      }
+      resolve();
+    });
+
+    child.on("error", (err) => {
+      ctx.rl.resume();
+      console.log("\n" + label.error + " " + colors.danger(`Failed to start command: ${err.message}\n`));
+      resolve();
+    });
+  });
 }
