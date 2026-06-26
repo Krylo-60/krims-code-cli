@@ -1,3 +1,7 @@
+# Aether CLI v1.3.1 Highlights
+- **Codex & Claude Code Fusion**: The powers of OpenAI Codex and Claude Code are now combined directly inside the default **Titan Fusion** (`titan`) mode.
+- **Streamlined Modes**: Removed the individual `codex` and `cloude-code` modes to reduce clutter, automatically redirecting all lookups of these modes to Titan Fusion.
+
 # Aether CLI v1.3.0 Highlights
 - **Token Telemetry Tracker**: Real-time prompt and completion token statistics shown on every chat turn.
 - **Session Telemetry `/tokens`**: A new slash command displaying detailed model-by-model session token breakdowns and total exchange stats.
