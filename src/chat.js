@@ -1209,10 +1209,10 @@ async function handleWriteFile(args, ctx) {
     const { mkdir } = await import("node:fs/promises");
     const dir = dirname(filepath);
     await mkdir(dir, { recursive: true });
-    await writeFile(filepath, blockContent, \"utf-8\");
-    console.log(\"\\n\" + label.system + \" \" + colors.success(`✓ Code block successfully written to: ${filepath}\\n`));
+    await writeFile(filepath, blockContent, "utf-8");
+    console.log("\n" + label.system + " " + colors.success(`✓ Code block successfully written to: ${filepath}\n`));
   } catch (err) {
-    console.log(\"\\n\" + label.error + \" \" + colors.danger(`Write failed: ${err.message}\\n`));
+    console.log("\n" + label.error + " " + colors.danger(`Write failed: ${err.message}\n`));
   }
 }
 
@@ -1220,38 +1220,38 @@ async function handleWriteFile(args, ctx) {
  * Interactive git commit command inside chat loop.
  */
 async function handleCommitInsideChat(ctx) {
-  const { getGitDiff, runGitCommit } = await import(\"./git.js\");
-  const { exec } = await import(\"node:child_process\");
-  const { promisify } = await import(\"node:util\");
+  const { getGitDiff, runGitCommit } = await import("./git.js");
+  const { exec } = await import("node:child_process");
+  const { promisify } = await import("node:util");
   const execAsync = promisify(exec);
 
   try {
     const { diff, isStaged } = await getGitDiff();
     if (!diff) {
-      console.log(\"\\n\" + label.system + \" \" + colors.warning(\"No staged or unstaged changes detected. Stage your files using 'git add' first.\\n\"));
+      console.log("\n" + label.system + " " + colors.warning("No staged or unstaged changes detected. Stage your files using 'git add' first.\n"));
       return;
     }
 
     if (!isStaged) {
       ctx.rl.pause();
       const stageAnswer = await new Promise((resolve) => {
-        ctx.rl.question(colors.warning(\"\\nNo staged changes found. Do you want to stage all changes automatically? [y/N]: \"), resolve);
+        ctx.rl.question(colors.warning("\nNo staged changes found. Do you want to stage all changes automatically? [y/N]: "), resolve);
       });
       ctx.rl.resume();
 
-      if (stageAnswer.toLowerCase().trim() === \"y\" || stageAnswer.toLowerCase().trim() === \"yes\") {
-        await execAsync(\"git add .\");
-        console.log(label.system + \" \" + colors.success(\"Staged all changes successfully.\"));
+      if (stageAnswer.toLowerCase().trim() === "y" || stageAnswer.toLowerCase().trim() === "yes") {
+        await execAsync("git add .");
+        console.log(label.system + " " + colors.success("Staged all changes successfully."));
       } else {
-        console.log(\"\\n\" + label.system + \" \" + colors.muted(\"Aborted. Please stage files using 'git add' first.\\n\"));
+        console.log("\n" + label.system + " " + colors.muted("Aborted. Please stage files using 'git add' first.\n"));
         return;
       }
     }
 
-    console.log(\"\\n\" + label.system + \" \" + colors.brand(\"Reading git diff and generating conventional commit message...\"));
-    console.log(\"\");
+    console.log("\n" + label.system + " " + colors.brand("Reading git diff and generating conventional commit message..."));
+    console.log("");
 
-    const systemPrompt = \"You are an expert developer assistant. Generate a concise, clear, and professional conventional commit message (e.g., 'feat: add login page', 'fix: resolve buffer overflow') based on the provided git diff. Output ONLY the commit message itself on a single line, with absolutely no backticks, markdown, explanations, prefix, or introductory text.\";
+    const systemPrompt = "You are an expert developer assistant. Generate a concise, clear, and professional conventional commit message (e.g., 'feat: add login page', 'fix: resolve buffer overflow') based on the provided git diff. Output ONLY the commit message itself on a single line, with absolutely no backticks, markdown, explanations, prefix, or introductory text.";
     const userPrompt = `Here is the git diff:\n\n${diff}`;
 
     let firstToken = true;
@@ -1259,7 +1259,7 @@ async function handleCommitInsideChat(ctx) {
     const onToken = (token) => {
       if (firstToken) {
         firstToken = false;
-        process.stdout.write(label.aether + \" Suggested Commit Message: \" + colors.success(token));
+        process.stdout.write(label.aether + " Suggested Commit Message: " + colors.success(token));
       } else {
         process.stdout.write(colors.success(token));
       }
@@ -1267,13 +1267,13 @@ async function handleCommitInsideChat(ctx) {
     };
 
     const result = await routePrompt(userPrompt, systemPrompt, ctx.aiConfig, onToken);
-    console.log(\"\\n\");
+    console.log("\n");
 
-    const cleanMessage = result.text.trim().replace(/^`+|`+$/g, \"\"); // strip quotes/backticks
+    const cleanMessage = result.text.trim().replace(/^`+|`+$/g, ""); // strip quotes/backticks
 
     ctx.rl.pause();
     const answer = await new Promise((resolve) => {
-      ctx.rl.question(colors.muted(\"Commit with this message? [Y/n]: \"), resolve);
+      ctx.rl.question(colors.muted("Commit with this message? [Y/n]: "), resolve);
     });
     ctx.rl.resume();
 
