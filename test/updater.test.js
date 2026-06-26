@@ -87,4 +87,23 @@ test("Auto-Updater & Highlights Suite", async (t) => {
     const updatedCheck = parseInt(await getConfigValue("LAST_UPDATE_CHECK") || "0", 10);
     assert.ok(updatedCheck > now - 10000);
   });
+
+  await t.test("checkForUpdates(true) bypasses 24h throttling when force is true", async () => {
+    const now = Date.now();
+    // Set last check to 1 hour ago (would normally throttle)
+    await setConfigValue("LAST_UPDATE_CHECK", (now - 60 * 60 * 1000).toString());
+
+    let fetchCalled = false;
+    globalThis.fetch = async (url) => {
+      fetchCalled = true;
+      assert.ok(url.includes("registry.npmjs.org"));
+      return {
+        ok: true,
+        json: async () => ({ version: pkg.version })
+      };
+    };
+
+    await checkForUpdates(true); // force = true
+    assert.strictEqual(fetchCalled, true);
+  });
 });

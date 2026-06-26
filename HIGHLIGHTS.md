@@ -1,3 +1,6 @@
+# Aether CLI v1.3.2 Highlights
+- **Manual Updater `/update`**: Added a new slash command `/update` to manually check the registry and force-upgrade Aether CLI to the latest version immediately, bypassing the 24-hour cache throttle.
+
 # Aether CLI v1.3.1 Highlights
 - **Codex & Claude Code Fusion**: The powers of OpenAI Codex and Claude Code are now combined directly inside the default **Titan Fusion** (`titan`) mode.
 - **Streamlined Modes**: Removed the individual `codex` and `cloude-code` modes to reduce clutter, automatically redirecting all lookups of these modes to Titan Fusion.

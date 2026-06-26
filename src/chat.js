@@ -136,7 +136,7 @@ export async function startChat(options = {}) {
       "/help", "/mode", "/modes", "/attach", "/files", "/clear",
       "/providers", "/export", "/status", "/copy", "/exit", "/quit",
       "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd", "/write",
-      "/commit", "/run", "/history", "/autopilot", "/tokens"
+      "/commit", "/run", "/history", "/autopilot", "/tokens", "/update"
     ];
     const customCmds = aiConfig.CUSTOM_COMMANDS || {};
     const commands = [...builtIn, ...Object.keys(customCmds)];
@@ -423,7 +423,8 @@ export async function startChat(options = {}) {
         "/", "/help", "/mode", "/modes", "/attach", "/files", "/clear",
         "/providers", "/export", "/status", "/copy", "/exit", "/quit",
         "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd",
-        "/guess", "/write", "/commit", "/run", "/history", "/autopilot", "/tokens"
+        "/guess", "/write", "/commit", "/run", "/history", "/autopilot", "/tokens",
+        "/update"
       ];
       
       const customCmds = aiConfig.CUSTOM_COMMANDS || {};
@@ -512,6 +513,12 @@ async function handleCommand(input, ctx) {
 
     case "/providers":
       showActiveProviders(ctx.aiConfig);
+      break;
+
+    case "/update":
+      console.log("\n" + label.system + " " + colors.muted("Checking registry for updates..."));
+      await checkForUpdates(true);
+      console.log("");
       break;
 
     case "/theme":
@@ -606,6 +613,7 @@ function showHelp(aiConfig) {
   console.log(keyValue("/history-clear", "Clear saved persistent chat history"));
   console.log(keyValue("/autopilot <mode>", "View or switch agent autopilot level (off, safe, workspace, machine)"));
   console.log(keyValue("/tokens", "View detailed session token usage and exchanges telemetry"));
+  console.log(keyValue("/update", "Force check for updates and update Aether CLI manually"));
   console.log(keyValue("/game", "Start the local mainframe hacking mini-game"));
   console.log(keyValue("/copy", "Copy the last assistant response to clipboard"));
   console.log(keyValue("/cmd <list|add|remove>", "Manage custom command shortcuts"));

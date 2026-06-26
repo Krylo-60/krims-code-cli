@@ -105,16 +105,16 @@ export async function showReleaseHighlights(version) {
 /**
  * Checks for updates and runs the automatic updater if configured.
  */
-export async function checkForUpdates() {
+export async function checkForUpdates(force = false) {
   const autoUpdate = (await getConfigValue("AUTO_UPDATE")) !== "false";
   const showHighlights = (await getConfigValue("SHOW_HIGHLIGHTS")) !== "false";
   const lastCheck = parseInt(await getConfigValue("LAST_UPDATE_CHECK") || "0", 10);
   const now = Date.now();
   const currentVersion = pkg.version;
 
-  // Run update check at most once every 24 hours (86,400,000 ms)
+  // Run update check at most once every 24 hours (86,400,000 ms), unless forced
   const checkInterval = 24 * 60 * 60 * 1000;
-  if (now - lastCheck < checkInterval) {
+  if (!force && (now - lastCheck < checkInterval)) {
     // Show highlights if we just updated and haven't shown highlights for this version
     const lastNotified = await getConfigValue("LAST_NOTIFIED_VERSION") || "";
     if (showHighlights && lastNotified !== currentVersion) {
@@ -136,12 +136,17 @@ export async function checkForUpdates() {
     });
     clearTimeout(timeoutId);
 
-    if (!res.ok) return;
+    if (!res.ok) {
+      if (force) {
+        console.log(label.system + " " + colors.warning(`⚠ Update check failed: server returned status ${res.status}`));
+      }
+      return;
+    }
     const data = await res.json();
     const latestVersion = data.version;
 
     if (isNewerVersion(latestVersion, currentVersion)) {
-      if (autoUpdate) {
+      if (autoUpdate || force) {
         console.log("\n" + label.system + " " + colors.brand(`⚡ New version detected! Auto-updating from v${currentVersion} to v${latestVersion}...`));
 
         const isPip = process.env.AETHER_PACKAGER === "pip";
@@ -173,6 +178,9 @@ export async function checkForUpdates() {
         console.log(label.system + " " + colors.muted(`To update, run: ${updateCmd}`));
       }
     } else {
+      if (force) {
+        console.log(label.system + " " + colors.success(`✓ Aether is already up to date (v${currentVersion}).`));
+      }
       // Already on latest version, check if we need to show highlights
       const lastNotified = await getConfigValue("LAST_NOTIFIED_VERSION") || "";
       if (showHighlights && lastNotified !== currentVersion) {
@@ -180,7 +188,9 @@ export async function checkForUpdates() {
         await setConfigValue("LAST_NOTIFIED_VERSION", currentVersion);
       }
     }
-  } catch {
-    // Fail silently (offline or registry down)
+  } catch (err) {
+    if (force) {
+      console.log(label.system + " " + colors.warning(`⚠ Update check failed: ${err.message}`));
+    }
   }
 }
