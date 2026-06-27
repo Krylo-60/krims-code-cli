@@ -2265,17 +2265,40 @@ export async function handleMicInput(ctx) {
 
   ctx.rl.pause();
 
+  const stdin = process.stdin;
+  const wasRaw = stdin.isRaw;
+  stdin.setRawMode(true);
+  stdin.resume();
+  stdin.setEncoding("utf8");
+
+  let aborted = false;
   await new Promise((resolve) => {
     function onData(chunk) {
+      if (chunk === "\u0003") {
+        aborted = true;
+        stdin.removeListener("data", onData);
+        resolve();
+        return;
+      }
       if (chunk === "\r" || chunk === "\n" || chunk === "\r\n") {
-        process.stdin.removeListener("data", onData);
+        stdin.removeListener("data", onData);
         resolve();
       }
     }
-    process.stdin.on("data", onData);
+    stdin.on("data", onData);
   });
 
+  stdin.setRawMode(wasRaw);
   ctx.rl.resume();
+
+  if (aborted) {
+    console.log("\n" + label.system + " " + colors.warning("Recording aborted by user.\n"));
+    try {
+      await handle.stop();
+      if (fs.existsSync(wavPath)) { fs.unlinkSync(wavPath); }
+    } catch (e) {}
+    return;
+  }
 
   console.log("");
   const spinner = createSpinner("transcribe");

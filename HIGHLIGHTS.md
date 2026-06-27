@@ -1,3 +1,11 @@
+# Aether CLI v1.3.10 Highlights
+- **Microphone Audio Input Fixes & Transcription (`/mic`)**:
+  - Adds `/mic` voice command to record audio directly from your microphone inside the terminal session.
+  - Implements native zero-dependency audio recording on Windows using the WinMM Multimedia Control Interface (MCI) via PowerShell.
+  - Automatically transcribes speech using Google Gemini (base64 inlineData), Groq Whisper, or OpenAI Whisper.
+  - Fixes readline interface raw mode pausing blockages to ensure Enter keypress resolves transcription correctly.
+  - Populates the active readline prompt buffer directly with the transcribed text so you can review, edit, and send it.
+
 # Aether CLI v1.3.9 Highlights
 - **Microphone Audio Input & Transcription (`/mic`)**:
   - Adds `/mic` voice command to record audio directly from your microphone inside the terminal session.
