@@ -1,3 +1,9 @@
+# Aether CLI v1.3.8 Highlights
+- **OpenCode TUI Welcome & Navigation**:
+  - Implements a stunning, responsive OpenCode-style TUI System State dashboard.
+  - Adds `/cd <path>` workspace directory navigation command with directory-only Tab autocomplete.
+  - Automatically displays packaging environment info (`npm` vs `pip`).
+
 # Aether CLI v1.3.7 Highlights
 - **Readme Updates**:
   - Updates documentation to display interactive Git TUI, Autopilot debug loop, and Web Telemetry Dashboard companion commands.

@@ -93,11 +93,11 @@ export function showBanner(currentMode = "titan") {
   };
   const desc = shortDescriptions[currentMode.toLowerCase()] || shortDescriptions.titan;
 
-  let version = "1.3.7";
+  let version = "1.3.8";
   try {
     const pkgUrl = new URL("../../package.json", import.meta.url);
     const pkg = JSON.parse(readFileSync(pkgUrl, "utf-8"));
-    version = pkg.version || "1.3.7";
+    version = pkg.version || "1.3.8";
   } catch (e) {
     // Fallback
   }
