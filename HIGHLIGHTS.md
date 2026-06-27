@@ -1,3 +1,7 @@
+# Aether CLI v1.3.7 Highlights
+- **Readme Updates**:
+  - Updates documentation to display interactive Git TUI, Autopilot debug loop, and Web Telemetry Dashboard companion commands.
+
 # Aether CLI v1.3.6 Highlights
 - **DX Fixes & Upgrades (Git TUI, Autopilot, Dashboard)**:
   - Fixes non-interactive Git TUI test hangs in git-initialized home directories.

@@ -29,6 +29,9 @@
 - ⚡ **Single-Shot Queries** — Quick one-off questions directly from the CLI
 - 🧠 **4 Reasoning Modes** — Synthesis, Research, Architect, Titan Fusion — each with unique system prompts
 - 📎 **File Context Injection** — Attach code files, logs, or documents for context-aware AI responses
+- 🤖 **Autopilot Debug Loop** — Automatically correct build/test failures using AI self-correcting feedback loop
+- 🌿 **Interactive Git TUI** — Beautiful cyberpunk ASCII branch tree commit history & interactive file staging checkbox menu
+- 📊 **Web HUD Dashboard** — Companion local zero-dependency telemetry dashboard displaying real-time latencies & provider status
 - 🔄 **Failover Mesh** — Automatic failback across all configured providers
 - 🔢 **Local Math Solver** — Evaluates mathematical expressions without an API call
 - 🤖 **Krylo Companion** — Offline cyberpunk companion bot when no API keys are configured
@@ -189,8 +192,20 @@ Inside interactive chat mode, use these slash commands:
 | `/cmd add <name> <template>` | Create a custom command shortcut |
 | `/cmd remove <name>` | Delete a custom command |
 | `/game` | Start the mainframe hacking mini-game |
-| `/status` | Session status & telemetry |
-| `/history-clear` | Clear saved chat history |
+| `/history` | List, switch, and resume past interactive chat sessions |
+| `/history-clear` | Clear saved persistent chat history |
+| `/autopilot <mode\|debug [cmd]>` | View/switch autopilot safety level or run autonomous debug loop |
+| `/git` | Launch interactive cyberpunk Git TUI and file stager checkbox menu |
+| `/dashboard` | Spawn zero-dependency local web server and launch telemetry dashboard HUD |
+| `/tokens` | View detailed session token usage and exchanges telemetry |
+| `/update` | Force check for updates and update Aether CLI manually |
+| `/review` | Run git diff and stream an AI code review |
+| `/diagnose [cmd]` | Run build/tests and AI-debug any errors |
+| `/explain <file>` | AI-explain the design and logic of a file |
+| `/refactor <file>` | AI-refactor the code of a target file |
+| `/bug <file>` | Scan a file to detect logical edge case failures |
+| `/doc <file>` | Write documentation, inline comments, or JSDoc |
+| `/translate <file> <lang>` | AI-translate file code into another target language |
 | `/exit` | End session |
 
 ---
