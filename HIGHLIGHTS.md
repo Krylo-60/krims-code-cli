@@ -1,3 +1,10 @@
+# Aether CLI v1.3.5 Highlights
+- **Visual Telemetry Dashboard HUD (`aether dashboard` / `aether telemetry`)**:
+  - Adds a local zero-dependency Web Server hosting a cyberpunk observability dashboard HUD.
+  - Displays real-time request latencies, query success rates, model token distributions, and active failover mesh topologies.
+  - Persistent storage preserves historical metrics across CLI executions in `~/.aether/telemetry.json`.
+  - Offline-compatible custom SVG chart engine allows telemetry visualization without an internet connection.
+
 # Aether CLI v1.3.4 Highlights
 - **AI-Powered Workspace Search & Code Indexer (`/search`)**:
   - Adds `/search <query>` slash command to scan all workspace text files for keyword matches, showing line numbers and code snippets.

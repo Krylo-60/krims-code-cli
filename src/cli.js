@@ -210,6 +210,16 @@ export function createCLI(argv) {
       await handleCommit();
     });
 
+  // ── Dashboard Command ───────────────────────────────────
+  program
+    .command("dashboard")
+    .alias("telemetry")
+    .description("Launch visual telemetry dashboard HUD in browser")
+    .option("-p, --port <port>", "Port to run the dashboard server on", "5050")
+    .action(async (opts) => {
+      await handleDashboard(opts);
+    });
+
   // ── Default: Show help ──────────────────────────────────
   program.action(() => {
     showMiniBanner();
@@ -774,4 +784,25 @@ function handleThemesList() {
     console.log(bullet(t.toUpperCase().padEnd(14) + isAct));
   }
   console.log("");
+}
+
+async function handleDashboard(opts) {
+  const { startTelemetryServer, openBrowser } = await import("./telemetry-server.js");
+  const parsedPort = parseInt(opts.port, 10) || 5050;
+
+  console.log("");
+  console.log(label.system + " " + colors.brand("Initializing Aether Visual Telemetry HUD..."));
+  
+  try {
+    const { port } = await startTelemetryServer(parsedPort);
+    const url = `http://localhost:${port}`;
+    console.log("  " + colors.success(`✓ Telemetry Server active at ${colors.accent(url)}`));
+    console.log("  " + colors.muted("Press Ctrl+C to terminate dashboard server."));
+    console.log("");
+    
+    openBrowser(url);
+  } catch (err) {
+    console.log("\n" + label.error + " " + colors.danger(`Failed to start telemetry server: ${err.message}\n`));
+    process.exit(1);
+  }
 }

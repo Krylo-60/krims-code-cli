@@ -12,6 +12,7 @@ import {
   callCohere,
 } from "./universal.js";
 import { estimateTokens, recordTokenUsage } from "./tokens.js";
+import { recordLatency } from "./telemetry.js";
 
 /**
  * Routes a prompt through the universal AI failover mesh.
@@ -31,11 +32,14 @@ export async function routePrompt(prompt, systemPrompt, config, onToken, history
   // ── Node 0: Local Math Solver ───────────────────────────
   const mathExpr = detectMathExpression(prompt);
   if (mathExpr) {
+    const startTime = performance.now();
     const mathResult = solveMath(mathExpr);
     if (mathResult) {
+      const latencyMs = performance.now() - startTime;
       const pTokens = estimateTokens(systemPrompt + prompt);
       const cTokens = estimateTokens(mathResult.text);
       const usage = recordTokenUsage("local-math", pTokens, cTokens);
+      recordLatency("local", "math-solver", latencyMs, pTokens, cTokens, true);
       return { ...mathResult, provider: "local", node: 0, usage };
     }
   }
@@ -57,10 +61,13 @@ export async function routePrompt(prompt, systemPrompt, config, onToken, history
 
   // ── No providers configured → Krylo ────────────────────
   if (active.length === 0) {
+    const startTime = performance.now();
     const kryloReply = generateKryloReply(prompt);
+    const latencyMs = performance.now() - startTime;
     const pTokens = estimateTokens(systemPrompt + prompt);
     const cTokens = estimateTokens(kryloReply.text);
     const usage = recordTokenUsage("krylo-local", pTokens, cTokens);
+    recordLatency("krylo-fallback", "local", latencyMs, pTokens, cTokens, true);
     return { ...kryloReply, provider: "krylo-fallback", node: 0, usage };
   }
 
@@ -69,6 +76,7 @@ export async function routePrompt(prompt, systemPrompt, config, onToken, history
   let nodeIndex = 1;
 
   for (const { id, provider, apiKey } of active) {
+    const startTime = performance.now();
     try {
       const model = config[`${id.toUpperCase()}_MODEL`] || provider.defaultModel;
       let result;
@@ -103,22 +111,31 @@ export async function routePrompt(prompt, systemPrompt, config, onToken, history
           );
       }
 
+      const latencyMs = performance.now() - startTime;
       const pTokens = estimateTokens(systemPrompt + prompt + history.map(h => h.content).join(""));
       const cTokens = estimateTokens(result.text);
       const usage = recordTokenUsage(result.model, pTokens, cTokens);
 
+      recordLatency(provider.name, result.model, latencyMs, pTokens, cTokens, true);
+
       return { ...result, node: nodeIndex, usage };
     } catch (err) {
+      const latencyMs = performance.now() - startTime;
+      const pTokens = estimateTokens(systemPrompt + prompt + history.map(h => h.content).join(""));
+      recordLatency(provider.name, "unknown", latencyMs, pTokens, 0, false);
       errors.push(`[Node ${nodeIndex} ${provider.name}] ${err.message}`);
       nodeIndex++;
     }
   }
 
   // ── Final Fallback: Krylo Companion ─────────────────────
+  const startTimeKrylo = performance.now();
   const kryloReply = generateKryloReply(prompt);
+  const latencyMsKrylo = performance.now() - startTimeKrylo;
   const pTokens = estimateTokens(systemPrompt + prompt + history.map(h => h.content).join(""));
   const cTokens = estimateTokens(kryloReply.text);
   const usage = recordTokenUsage("krylo-local", pTokens, cTokens);
+  recordLatency("krylo-fallback", "local", latencyMsKrylo, pTokens, cTokens, true);
   return {
     ...kryloReply,
     provider: "krylo-fallback",
