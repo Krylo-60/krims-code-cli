@@ -54,6 +54,12 @@ test("Offline Math Fallback & Krylo Suite", async (t) => {
     const reply = generateOfflineReply("any query");
     assert.strictEqual(reply.type, "offline-error");
     assert.ok(reply.text.includes("No active API keys configured"));
+
+    const replyWithErrors = generateOfflineReply("any query", ["Timeout error", "Quota exceeded"]);
+    assert.strictEqual(replyWithErrors.type, "offline-error");
+    assert.ok(replyWithErrors.text.includes("All configured AI provider nodes failed to respond"));
+    assert.ok(replyWithErrors.text.includes("Timeout error"));
+    assert.ok(replyWithErrors.text.includes("Quota exceeded"));
   });
 
   await t.test("detectMathExpression and solveMath support trig, logs, square root and constants", () => {

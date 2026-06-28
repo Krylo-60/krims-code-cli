@@ -101,9 +101,22 @@ export function runMainframeHack() {
 /**
  * Generates a local offline/error reply when no AI keys are configured or fail.
  * @param {string} prompt - The user prompt
+ * @param {string[]} [errors] - Optional error messages from failed provider nodes
  * @returns {{ text: string, type: string }}
  */
-export function generateOfflineReply(prompt) {
+export function generateOfflineReply(prompt, errors = []) {
+  if (errors && errors.length > 0) {
+    return {
+      text: [
+        "⚠️  All configured AI provider nodes failed to respond.",
+        "    Errors encountered:",
+        ...errors.map((e) => `    • ${e}`),
+        "",
+        "    Please check your API keys, network connection, or rate limits."
+      ].join("\n"),
+      type: "offline-error"
+    };
+  }
   return {
     text: [
       "⚠️  No active API keys configured. Please set GOOGLE_API_KEY, GROQ_API_KEY, or OPENAI_API_KEY in your config to start chatting.",

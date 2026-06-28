@@ -130,7 +130,7 @@ export async function routePrompt(prompt, systemPrompt, config, onToken, history
 
   // ── Final Fallback: Offline Fallback ────────────────────
   const startTimeOffline = performance.now();
-  const offlineReply = generateOfflineReply(prompt);
+  const offlineReply = generateOfflineReply(prompt, errors);
   const latencyMsOffline = performance.now() - startTimeOffline;
   const pTokens = estimateTokens(systemPrompt + prompt + history.map(h => h.content).join(""));
   const cTokens = estimateTokens(offlineReply.text);

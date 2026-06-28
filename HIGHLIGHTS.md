@@ -1,3 +1,8 @@
+# Aether CLI v1.4.2 Highlights
+- **Mesh Error Transparency**:
+  - Implements dynamic offline fallback error alerts containing the exact error messages encountered by all failing provider nodes.
+  - Ensures Aether only states "No active API keys configured" if no keys are setup at all, rather than outputting it incorrectly upon network or API limit node failures.
+
 # Aether CLI v1.4.1 Highlights
 - **Krylo Companion Bot Removal**:
   - Removes the fictional Krylo companion terminal response lines entirely from local failbacks and mesh failures.

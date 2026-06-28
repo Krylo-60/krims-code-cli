@@ -170,6 +170,9 @@ test("Universal AI Router Suite", async (t) => {
     assert.strictEqual(result.errors.length, 2);
     assert.ok(result.errors[0].includes("Node 1 Groq"));
     assert.ok(result.errors[1].includes("Node 2 OpenAI"));
+    assert.ok(result.text.includes("All configured AI provider nodes failed to respond"));
+    assert.ok(result.text.includes("Node 1 Groq"));
+    assert.ok(result.text.includes("Node 2 OpenAI"));
   });
 
   await t.test("routePrompt forwards chat history to OpenAI and Google payloads correctly", async () => {
