@@ -1,3 +1,8 @@
+# Aether CLI v1.4.3 Highlights
+- **Rate Limit / Quota Exceeded Recognition**:
+  - Automatically parses failed node errors to detect rate-limit blocks (like Gemini 429 quota exhaustion).
+  - Prepends a clear, prominent human-friendly `💡 [Rate Limit / Quota Exceeded]` summary highlight at the top of the error alert so users instantly know their quota was hit.
+
 # Aether CLI v1.4.2 Highlights
 - **Mesh Error Transparency**:
   - Implements dynamic offline fallback error alerts containing the exact error messages encountered by all failing provider nodes.

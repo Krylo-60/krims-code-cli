@@ -106,14 +106,31 @@ export function runMainframeHack() {
  */
 export function generateOfflineReply(prompt, errors = []) {
   if (errors && errors.length > 0) {
+    const isRateLimited = errors.some((e) => {
+      const lower = e.toLowerCase();
+      return (
+        lower.includes("quota") ||
+        lower.includes("rate limit") ||
+        lower.includes("rate-limit") ||
+        lower.includes("429") ||
+        lower.includes("resource_exhausted") ||
+        lower.includes("limit exceeded")
+      );
+    });
+
+    const lines = ["⚠️  All configured AI provider nodes failed to respond."];
+    if (isRateLimited) {
+      lines.push("    💡 [Rate Limit / Quota Exceeded]: One or more provider nodes hit their API usage limits.");
+    }
+    lines.push(
+      "    Errors encountered:",
+      ...errors.map((e) => `    • ${e}`),
+      "",
+      "    Please check your API keys, network connection, or rate limits."
+    );
+
     return {
-      text: [
-        "⚠️  All configured AI provider nodes failed to respond.",
-        "    Errors encountered:",
-        ...errors.map((e) => `    • ${e}`),
-        "",
-        "    Please check your API keys, network connection, or rate limits."
-      ].join("\n"),
+      text: lines.join("\n"),
       type: "offline-error"
     };
   }

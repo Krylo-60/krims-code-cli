@@ -58,6 +58,7 @@ test("Offline Math Fallback & Krylo Suite", async (t) => {
     const replyWithErrors = generateOfflineReply("any query", ["Timeout error", "Quota exceeded"]);
     assert.strictEqual(replyWithErrors.type, "offline-error");
     assert.ok(replyWithErrors.text.includes("All configured AI provider nodes failed to respond"));
+    assert.ok(replyWithErrors.text.includes("Rate Limit / Quota Exceeded"));
     assert.ok(replyWithErrors.text.includes("Timeout error"));
     assert.ok(replyWithErrors.text.includes("Quota exceeded"));
   });
