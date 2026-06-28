@@ -26,7 +26,8 @@ import {
   setTheme,
   getThemesList,
   interactiveMenu,
-  getIcon
+  getIcon,
+  highlightCode
 } from "./ui/theme.js";
 import { createSpinner } from "./ui/spinner.js";
 import { showBanner } from "./ui/banner.js";
@@ -57,7 +58,7 @@ const getMarked = () => new Marked(markedTerminal({
   reflowText: true,
   width: process.stdout.columns ? Math.max(20, process.stdout.columns - 4) : 80,
   showSectionPrefix: false,
-  code: (c) => colors.orange(c),
+  code: (c, lang) => highlightCode(c, lang),
   codespan: (c) => colors.accent3(c),
   heading: (h) => colors.accent.bold(h),
   strong: (s) => colors.magenta.bold(s),

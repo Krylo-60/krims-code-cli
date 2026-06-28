@@ -1,3 +1,8 @@
+# Aether CLI v1.4.8 Highlights
+- **Dynamic Theme-Aware Code Syntax Highlighting**:
+  - Implements rich, theme-aware terminal code syntax highlighting for JavaScript, Python, HTML/XML, CSS, and Bash.
+  - Automatically matches code blocks in AI answers to the active user visual theme (Cyberpunk, Matrix, Synthwave, or Crimson).
+
 # Aether CLI v1.4.7 Highlights
 - **Graceful Web Search Empty Handlers**:
   - Adds robust detection and processing for empty web search tool results.

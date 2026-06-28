@@ -512,3 +512,113 @@ export function getIcon(name, config) {
   return icons[name] || "";
 }
 
+/**
+ * Zero-dependency dynamic theme-aware code block syntax highlighting.
+ * @param {string} code - The raw code to highlight
+ * @param {string} lang - The code block language (e.g. javascript, python, etc.)
+ * @returns {string} Colored code for terminal output
+ */
+export function highlightCode(code, lang) {
+  if (!lang) return colors.orange(code);
+  const l = lang.toLowerCase().trim();
+
+  // Theme-aware colors from the active theme proxy
+  const kwColor = colors.magenta;       // keywords
+  const strColor = colors.success;      // strings
+  const commentColor = colors.muted;    // comments
+  const numColor = colors.accent2;      // numbers
+  const fnColor = colors.accent;        // function calls
+  const opColor = colors.warning;       // operators
+
+  if (l === "javascript" || l === "js" || l === "typescript" || l === "ts" || l === "json") {
+    let result = code;
+
+    // Comments
+    const comments = [];
+    result = result.replace(/(\/\*[\s\S]*?\*\/|\/\/.*)/g, (match) => {
+      comments.push(commentColor(match));
+      return `__COMMENT_PLACEHOLDER_${comments.length - 1}__`;
+    });
+
+    // Strings
+    const strings = [];
+    result = result.replace(/(["'`])(?:\\.|[^\\])*?\1/g, (match) => {
+      strings.push(strColor(match));
+      return `__STRING_PLACEHOLDER_${strings.length - 1}__`;
+    });
+
+    // Keywords
+    const keywords = /\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|default|import|export|from|class|extends|new|this|async|await|try|catch|finally|throw|typeof|instanceof|in|of|null|undefined|true|false|void|delete|debugger)\b/g;
+    result = result.replace(keywords, (m) => kwColor(m));
+
+    // Numbers
+    result = result.replace(/\b(\d+(?:\.\d+)?)\b/g, (m) => numColor(m));
+
+    // Function calls
+    result = result.replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*\()/g, (m) => fnColor(m));
+
+    // Operators
+    result = result.replace(/([+\-*/%=<>!&|^~]+)/g, (m) => opColor(m));
+
+    // Restore strings and comments
+    result = result.replace(/__STRING_PLACEHOLDER_(\d+)__/g, (_, idx) => strings[parseInt(idx, 10)]);
+    result = result.replace(/__COMMENT_PLACEHOLDER_(\d+)__/g, (_, idx) => comments[parseInt(idx, 10)]);
+
+    return result;
+  }
+
+  if (l === "python" || l === "py") {
+    let result = code;
+
+    const comments = [];
+    result = result.replace(/(#.*)/g, (match) => {
+      comments.push(commentColor(match));
+      return `__COMMENT_PLACEHOLDER_${comments.length - 1}__`;
+    });
+
+    const strings = [];
+    result = result.replace(/(["'])(?:\\.|[^\\])*?\1/g, (match) => {
+      strings.push(strColor(match));
+      return `__STRING_PLACEHOLDER_${strings.length - 1}__`;
+    });
+
+    const keywords = /\b(def|class|return|if|elif|else|for|while|break|continue|import|from|as|in|is|not|and|or|try|except|finally|raise|assert|with|lambda|pass|global|nonlocal|None|True|False)\b/g;
+    result = result.replace(keywords, (m) => kwColor(m));
+
+    result = result.replace(/\b(\d+(?:\.\d+)?)\b/g, (m) => numColor(m));
+    result = result.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\s*\()/g, (m) => fnColor(m));
+
+    result = result.replace(/__STRING_PLACEHOLDER_(\d+)__/g, (_, idx) => strings[parseInt(idx, 10)]);
+    result = result.replace(/__COMMENT_PLACEHOLDER_(\d+)__/g, (_, idx) => comments[parseInt(idx, 10)]);
+
+    return result;
+  }
+
+  if (l === "html" || l === "xml" || l === "svg") {
+    let result = code;
+    result = result.replace(/(<\/?[a-zA-Z0-9:-]+)/g, (m) => kwColor(m));
+    result = result.replace(/(\/?>)/g, (m) => kwColor(m));
+    result = result.replace(/(="[^"]*")/g, (match) => "=" + strColor(match.slice(1)));
+    return result;
+  }
+
+  if (l === "css") {
+    let result = code;
+    result = result.replace(/([a-zA-Z0-9_#-]+)\s*:/g, (m, p1) => fnColor(p1) + ":");
+    result = result.replace(/:\s*([^;]+);/g, (match, p1) => ": " + numColor(p1) + ";");
+    result = result.replace(/(\.[a-zA-Z0-9_-]+)/g, (m) => kwColor(m));
+    result = result.replace(/(#[a-zA-Z0-9_-]+)/g, (m) => opColor(m));
+    return result;
+  }
+
+  if (l === "bash" || l === "sh" || l === "cmd" || l === "powershell" || l === "ps1") {
+    let result = code;
+    result = result.replace(/(#.*)/g, (m) => commentColor(m));
+    const keywords = /\b(echo|cd|ls|dir|pwd|git|npm|node|pip|python|mkdir|rm|cp|mv|cat|grep|tail|head)\b/g;
+    result = result.replace(keywords, (m) => kwColor(m));
+    return result;
+  }
+
+  return colors.orange(code);
+}
+

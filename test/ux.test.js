@@ -1,7 +1,7 @@
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
 import { ReadableStream } from "node:stream/web";
-import { separator, clearStreamedText, StreamFilter, stripCodeFences, getActiveTheme, setTheme, getThemesList, getIcon } from "../src/ui/theme.js";
+import { separator, clearStreamedText, StreamFilter, stripCodeFences, getActiveTheme, setTheme, getThemesList, getIcon, highlightCode } from "../src/ui/theme.js";
 import { createSpinner } from "../src/ui/spinner.js";
 import { routePrompt } from "../src/ai/router.js";
 import { getModeByName, MODES } from "../src/modes.js";
@@ -198,5 +198,33 @@ test("Cyberpunk UX and Streaming Suite", async (t) => {
     assert.strictEqual(getIcon("mic", emojiConfig), "🎤 ");
     assert.strictEqual(getIcon("git", emojiConfig), "🌿 ");
     assert.strictEqual(getIcon("mic", defaultConfig), "🎤 ");
+  });
+
+  await t.test("highlightCode formats keywords, strings, comments, and numbers for javascript and python successfully", () => {
+    // JS highlighting check
+    const jsCode = "const x = 42; // comment\nconsole.log('hi');";
+    const jsHighlighted = highlightCode(jsCode, "javascript");
+    assert.ok(jsHighlighted.includes("// comment"));
+    assert.ok(jsHighlighted.includes("const"));
+    assert.ok(jsHighlighted.includes("42"));
+    assert.ok(jsHighlighted.includes("'hi'"));
+
+    // Py highlighting check
+    const pyCode = "def test():\n    # py comment\n    print('hello')";
+    const pyHighlighted = highlightCode(pyCode, "py");
+    assert.ok(pyHighlighted.includes("# py comment"));
+    assert.ok(pyHighlighted.includes("def"));
+    assert.ok(pyHighlighted.includes("'hello'"));
+    
+    // HTML highlighting check
+    const htmlCode = "<div class=\"btn\">ok</div>";
+    const htmlHighlighted = highlightCode(htmlCode, "html");
+    assert.ok(htmlHighlighted.includes("<div"));
+    assert.ok(htmlHighlighted.includes("btn"));
+
+    // Fallback check
+    const fallbackCode = "plain text";
+    const fallback = highlightCode(fallbackCode, "");
+    assert.ok(fallback.includes("plain text"));
   });
 });
