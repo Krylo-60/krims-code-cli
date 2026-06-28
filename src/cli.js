@@ -16,13 +16,10 @@ import {
   label,
   separator,
   keyValue,
-  bullet,
   clearStreamedText,
   StreamFilter,
   stripCodeFences,
-  getActiveTheme,
   setTheme,
-  getThemesList,
 } from "./ui/theme.js";
 import { createSpinner } from "./ui/spinner.js";
 import { routePrompt } from "./ai/router.js";
@@ -41,6 +38,7 @@ import {
   configExists,
   isValidConfigKey,
 } from "./config.js";
+import { registry } from "./commands/index.js";
 
 // Configure marked dynamically for terminal output
 const getMarked = () => new Marked(markedTerminal({
@@ -64,7 +62,7 @@ const VERSION = pkg.version;
  * Sets up and runs the Aether CLI.
  * @param {string[]} argv - Process arguments
  */
-export function createCLI(argv) {
+export async function createCLI(argv) {
   const program = new Command();
 
   program
@@ -167,32 +165,6 @@ export function createCLI(argv) {
     .action(() => {
       handleModes();
     });
-  // ── Theme Command ───────────────────────────────────────
-  program
-    .command("theme [name]")
-    .description("Show active visual theme or switch to a new theme")
-    .action(async (name) => {
-      if (!name) {
-        await handleThemeGet();
-      } else {
-        await handleThemeSet(name);
-      }
-    });
-
-  // ── Themes Command ──────────────────────────────────────
-  program
-    .command("themes")
-    .description("List all available color themes")
-    .action(() => {
-      handleThemesList();
-    });
-  // ── Status Command ──────────────────────────────────────
-  program
-    .command("status")
-    .description("Show system status & configured providers")
-    .action(async () => {
-      await handleStatus();
-    });
 
   // ── Setup Command ───────────────────────────────────────
   program
@@ -202,23 +174,39 @@ export function createCLI(argv) {
       await handleSetup();
     });
 
-  // ── Commit Command ──────────────────────────────────────
-  program
-    .command("commit")
-    .description("Generate conventional commit message from git diff and commit changes")
-    .action(async () => {
-      await handleCommit();
+  // Load registry commands and register them dynamically
+  await registry.load();
+  const commands = registry.getAll();
+  for (const cmd of commands) {
+    const signature = cmd.signature || cmd.name;
+    let cmdObj = program.command(signature);
+    
+    if (cmd.description) {
+      cmdObj.description(cmd.description);
+    }
+    
+    if (cmd.aliases && Array.isArray(cmd.aliases)) {
+      for (const alias of cmd.aliases) {
+        cmdObj.alias(alias);
+      }
+    }
+    
+    if (cmd.options && Array.isArray(cmd.options)) {
+      for (const opt of cmd.options) {
+        if (opt.defaultValue !== undefined) {
+          cmdObj.option(opt.flags, opt.description, opt.defaultValue);
+        } else {
+          cmdObj.option(opt.flags, opt.description);
+        }
+      }
+    }
+    
+    cmdObj.action(async (...args) => {
+      const opts = cmdObj.opts();
+      const cliArgs = args.filter(a => typeof a === 'string' || Array.isArray(a));
+      await cmd.executeCLI(cliArgs, opts);
     });
-
-  // ── Dashboard Command ───────────────────────────────────
-  program
-    .command("dashboard")
-    .alias("telemetry")
-    .description("Launch visual telemetry dashboard HUD in browser")
-    .option("-p, --port <port>", "Port to run the dashboard server on", "5050")
-    .action(async (opts) => {
-      await handleDashboard(opts);
-    });
+  }
 
   // ── Default: Show help ──────────────────────────────────
   program.action(() => {
@@ -226,7 +214,7 @@ export function createCLI(argv) {
     program.help();
   });
 
-  program.parse(argv);
+  await program.parseAsync(argv);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -552,121 +540,6 @@ function handleModes() {
   }
 }
 
-async function handleStatus() {
-  const aiConfig = await getAIConfig();
-  const exists = await configExists();
-  const active = getActiveProviders(aiConfig);
-
-  console.log("");
-  console.log(colors.brand("  ⚡ AETHER SYSTEM STATUS"));
-  console.log(separator("─"));
-  console.log(keyValue("  Version", `v${VERSION}`));
-  console.log(keyValue("  Config", exists ? colors.success("✓ Found") : colors.warning("✗ Not found")));
-  console.log(keyValue("  Location", getConfigPath()));
-
-  console.log("");
-  console.log(colors.accent("  ◈ Active Providers:"));
-  if (active.length === 0) {
-    console.log("  " + colors.warning("  No providers configured. Run `aether setup` to get started."));
-  } else {
-    for (const { id, provider } of active) {
-      console.log("  " + colors.success("  ✓ ") + colors.text(provider.name) + colors.dim(` (${provider.defaultModel})`));
-    }
-  }
-
-  console.log("");
-  console.log(colors.accent("  ◈ Local Fallbacks:"));
-  console.log(keyValue("    Math Solver", colors.success("✓ Active")));
-  console.log(keyValue("    Offline Fallback", colors.success("✓ Standing By")));
-
-  console.log("");
-  console.log(colors.accent("  ◈ Failover Mesh:"));
-  const totalNodes = 1 + active.length; // +1 for local offline fallback
-  console.log(keyValue("    Active Nodes", `${totalNodes}`));
-  console.log(keyValue("    Mesh Status", active.length > 0 ? colors.success("✓ Online") : colors.warning("⚠ Local Only")));
-  console.log("");
-}
-
-async function handleCommit() {
-  const { getGitDiff, runGitCommit } = await import("./git.js");
-  const { createInterface } = await import("node:readline/promises");
-
-  try {
-    const { diff, isStaged } = await getGitDiff();
-    if (!diff) {
-      console.log("\n" + label.system + " " + colors.warning("No staged or unstaged changes detected. Stage your files using 'git add' first.\n"));
-      return;
-    }
-
-    if (!isStaged) {
-      const rlInit = createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
-      const stageAnswer = await rlInit.question("\n" + label.system + " " + colors.warning("No staged changes found. Do you want to stage all changes automatically? [y/N]: "));
-      rlInit.close();
-
-      if (stageAnswer.toLowerCase().trim() === "y" || stageAnswer.toLowerCase().trim() === "yes") {
-        const { exec } = await import("node:child_process");
-        const { promisify } = await import("node:util");
-        const execAsync = promisify(exec);
-        await execAsync("git add .");
-        console.log(label.system + " " + colors.success("Staged all changes successfully."));
-      } else {
-        console.log("\n" + label.system + " " + colors.muted("Aborted. Please stage files using 'git add' first.\n"));
-        return;
-      }
-    }
-
-    const aiConfig = await getAIConfig();
-    const mode = MODES[DEFAULT_MODE];
-
-    console.log("");
-    console.log(label.system + " " + colors.brand("Reading git diff and generating conventional commit message..."));
-    console.log("");
-
-    const systemPrompt = "You are an expert developer assistant. Generate a concise, clear, and professional conventional commit message (e.g., 'feat: add login page', 'fix: resolve buffer overflow') based on the provided git diff. Output ONLY the commit message itself on a single line, with absolutely no backticks, markdown, explanations, prefix, or introductory text.";
-    const userPrompt = `Here is the git diff:\n\n${diff}`;
-
-    let firstToken = true;
-    let commitMessage = "";
-    const onToken = (token) => {
-      if (firstToken) {
-        firstToken = false;
-        process.stdout.write(label.aether + " Suggested Commit Message: " + colors.success(token));
-      } else {
-        process.stdout.write(colors.success(token));
-      }
-      commitMessage += token;
-    };
-
-    const result = await routePrompt(userPrompt, mode.systemPrompt, aiConfig, onToken);
-    console.log("\n");
-
-    const cleanMessage = result.text.trim().replace(/^`+|`+$/g, ""); // strip quotes/backticks
-
-    const rl = createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    const answer = await rl.question(colors.muted("Commit with this message? [Y/n]: "));
-    rl.close();
-
-    if (answer.toLowerCase().trim() === "n" || answer.toLowerCase().trim() === "no") {
-      console.log("\n" + label.system + " " + colors.muted("Commit aborted.\n"));
-      return;
-    }
-
-    console.log("\n" + label.system + " " + colors.brand("Executing git commit..."));
-    const output = await runGitCommit(cleanMessage);
-    console.log("\n" + colors.success(output) + "\n");
-
-  } catch (err) {
-    console.log("\n" + label.error + " " + colors.danger(err.message) + "\n");
-  }
-}
-
 async function handleSetup() {
   const { createInterface } = await import("node:readline");
 
@@ -756,53 +629,4 @@ function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes}B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-}
-
-async function handleThemeGet() {
-  const aiConfig = await getAIConfig();
-  const theme = aiConfig.THEME || "cyberpunk";
-  console.log("\n" + label.config + " " + colors.muted("Active Theme: ") + colors.accent(theme.toUpperCase()) + "\n");
-}
-
-async function handleThemeSet(name) {
-  const success = setTheme(name);
-  if (success) {
-    await setConfigValue("THEME", name.toLowerCase().trim());
-    console.log("\n" + label.config + " " + colors.success(`✓ Switched theme to ${name.toUpperCase()}`) + "\n");
-  } else {
-    console.log("\n" + label.error + " " + colors.danger(`Unknown theme: "${name}".`) + colors.muted(` Available: ${getThemesList().join(", ")}\n`));
-  }
-}
-
-function handleThemesList() {
-  console.log("");
-  console.log(colors.brand("  ◈ AVAILABLE COLOR THEMES"));
-  console.log(separator("─"));
-  const active = getActiveTheme();
-  for (const t of getThemesList()) {
-    const isAct = t === active ? colors.success("★ ACTIVE") : "";
-    console.log(bullet(t.toUpperCase().padEnd(14) + isAct));
-  }
-  console.log("");
-}
-
-async function handleDashboard(opts) {
-  const { startTelemetryServer, openBrowser } = await import("./telemetry-server.js");
-  const parsedPort = parseInt(opts.port, 10) || 5050;
-
-  console.log("");
-  console.log(label.system + " " + colors.brand("Initializing Aether Visual Telemetry HUD..."));
-  
-  try {
-    const { port } = await startTelemetryServer(parsedPort);
-    const url = `http://localhost:${port}`;
-    console.log("  " + colors.success(`✓ Telemetry Server active at ${colors.accent(url)}`));
-    console.log("  " + colors.muted("Press Ctrl+C to terminate dashboard server."));
-    console.log("");
-    
-    openBrowser(url);
-  } catch (err) {
-    console.log("\n" + label.error + " " + colors.danger(`Failed to start telemetry server: ${err.message}\n`));
-    process.exit(1);
-  }
 }

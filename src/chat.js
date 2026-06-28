@@ -50,6 +50,7 @@ import { AGENT_INSTRUCTIONS } from "./agent.js";
 import { checkForUpdates } from "./updater.js";
 import { getSessionTokenStats, getBreakdownByModel, resetSessionTokenStats } from "./ai/tokens.js";
 import { getGitDiff } from "./git.js";
+import { registry } from "./commands/index.js";
 
 
 
@@ -73,6 +74,9 @@ const getMarked = () => new Marked(markedTerminal({
 export async function startChat(options = {}) {
   // Load AI config
   const aiConfig = await getAIConfig();
+  
+  // Load registry commands
+  await registry.load();
   
   // Run update check
   await checkForUpdates();
@@ -137,12 +141,20 @@ export async function startChat(options = {}) {
   const completer = (line) => {
     const builtIn = [
       "/help", "/mode", "/modes", "/attach", "/files", "/clear",
-      "/providers", "/export", "/status", "/copy", "/exit", "/quit",
-      "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd", "/write",
-      "/commit", "/run", "/history", "/autopilot", "/tokens", "/update",
+      "/providers", "/export", "/copy", "/exit", "/quit",
+      "/history-clear", "/game", "/abort", "/cmd", "/write",
+      "/run", "/history", "/autopilot", "/tokens", "/update",
       "/review", "/diagnose", "/goal", "/explain", "/refactor", "/bug", "/doc", "/translate",
-      "/search", "/git", "/dashboard", "/cd", "/mic"
+      "/search", "/git", "/cd", "/mic"
     ];
+    for (const registryCmd of registry.getAll()) {
+      builtIn.push(`/${registryCmd.name}`);
+      if (registryCmd.aliases) {
+        for (const alias of registryCmd.aliases) {
+          builtIn.push(`/${alias}`);
+        }
+      }
+    }
     const customCmds = aiConfig.CUSTOM_COMMANDS || {};
     const commands = [...builtIn, ...Object.keys(customCmds)];
 
@@ -434,12 +446,20 @@ export async function startChat(options = {}) {
       const [cmd, ...args] = input.split(/\s+/);
       const builtInList = [
         "/", "/help", "/mode", "/modes", "/attach", "/files", "/clear",
-        "/providers", "/export", "/status", "/copy", "/exit", "/quit",
-        "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd",
-        "/guess", "/write", "/commit", "/run", "/history", "/autopilot", "/tokens",
+        "/providers", "/export", "/copy", "/exit", "/quit",
+        "/history-clear", "/game", "/abort", "/cmd",
+        "/guess", "/write", "/run", "/history", "/autopilot", "/tokens",
         "/update", "/review", "/diagnose", "/goal", "/explain", "/refactor", "/bug", "/doc",
-        "/translate", "/search", "/git", "/dashboard", "/cd", "/mic"
+        "/translate", "/search", "/git", "/cd", "/mic"
       ];
+      for (const registryCmd of registry.getAll()) {
+        builtInList.push(`/${registryCmd.name}`);
+        if (registryCmd.aliases) {
+          for (const alias of registryCmd.aliases) {
+            builtInList.push(`/${alias}`);
+          }
+        }
+      }
       
       const customCmds = aiConfig.CUSTOM_COMMANDS || {};
       
@@ -489,6 +509,16 @@ export async function startChat(options = {}) {
 async function handleCommand(input, ctx) {
   const [cmd, ...args] = input.split(/\s+/);
 
+  const slashName = cmd.startsWith("/") ? cmd.slice(1).toLowerCase() : cmd.toLowerCase();
+  const registeredCmd = registry.get(slashName);
+  if (registeredCmd) {
+    const result = await registeredCmd.executeChat(args, ctx);
+    if (result === "exit") {
+      return "exit";
+    }
+    return;
+  }
+
   switch (cmd.toLowerCase()) {
     case "/":
     case "/help":
@@ -526,7 +556,7 @@ async function handleCommand(input, ctx) {
       break;
 
     case "/status":
-      showStatus(ctx);
+      // handled dynamically
       break;
 
     case "/providers":
@@ -564,11 +594,11 @@ async function handleCommand(input, ctx) {
       break;
 
     case "/theme":
-      await handleThemeSwitch(args);
+      // handled dynamically
       break;
 
     case "/themes":
-      showThemesList();
+      // handled dynamically
       break;
 
     case "/history-clear":
@@ -604,7 +634,7 @@ async function handleCommand(input, ctx) {
       break;
 
     case "/commit":
-      await handleCommitInsideChat(ctx);
+      // handled dynamically
       break;
 
     case "/run":
@@ -624,7 +654,7 @@ async function handleCommand(input, ctx) {
       break;
 
     case "/dashboard":
-      await handleDashboardCommand(ctx);
+      // handled dynamically
       break;
 
     case "/mic":
@@ -877,7 +907,7 @@ async function handleExport(history) {
   }
 }
 
-function showStatus(ctx) {
+function showStatus_unused(ctx) {
   const active = getActiveProviders(ctx.aiConfig);
 
   console.log("");
@@ -912,7 +942,7 @@ function showActiveProviders(aiConfig) {
   console.log("");
 }
 
-async function handleThemeSwitch(args) {
+async function handleThemeSwitch_unused(args) {
   const themeName = args[0];
   if (!themeName) {
     console.log("\n" + label.system + " " + colors.warning("Usage: /theme <theme-name>. Type /themes to list themes.\n"));
@@ -929,7 +959,7 @@ async function handleThemeSwitch(args) {
   }
 }
 
-function showThemesList() {
+function showThemesList_unused() {
   console.log("");
   console.log(colors.brand("  ◈ AVAILABLE COLOR THEMES"));
   console.log(separator("─"));
@@ -1357,7 +1387,7 @@ async function handleWriteFile(args, ctx) {
 /**
  * Interactive git commit command inside chat loop.
  */
-async function handleCommitInsideChat(ctx) {
+async function handleCommitInsideChat_unused(ctx) {
   const { getGitDiff, runGitCommit } = await import("./git.js");
   const { exec } = await import("node:child_process");
   const { promisify } = await import("node:util");
@@ -2371,7 +2401,7 @@ export async function handleGitTUI(ctx) {
 /**
  * Handles spawning and launching the local telemetry dashboard.
  */
-export async function handleDashboardCommand(ctx) {
+export async function handleDashboardCommand_unused(ctx) {
   const { startDashboardServer } = await import("./dashboard.js");
   const { exec } = await import("node:child_process");
   
