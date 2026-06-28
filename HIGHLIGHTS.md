@@ -1,3 +1,8 @@
+# Aether CLI v1.4.7 Highlights
+- **Graceful Web Search Empty Handlers**:
+  - Adds robust detection and processing for empty web search tool results.
+  - Injects a clear `"No search results were found"` feedback block back to the AI context rather than a blank newline list, preventing models from thinking that the outputs were missing or corrupt.
+
 # Aether CLI v1.4.6 Highlights
 - **Granular File Line Range Selection (`/attach file:start-end`)**:
   - Adds syntax support for selecting line ranges when attaching file context (e.g., `/attach src/cli.js:10-50` or `/attach index.html:100`).

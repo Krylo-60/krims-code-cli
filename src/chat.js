@@ -366,8 +366,12 @@ export async function startChat(options = {}) {
             } else if (tr.tool === "WRITE_FILE") {
               formattedResults += `\n- WRITE_FILE "${tr.arg}" succeeded.`;
             } else if (tr.tool === "SEARCH_WEB") {
-              const resultsList = tr.results.map((r, i) => `${i+1}. [${r.title}](${r.url})\n   ${r.snippet}`).join("\n");
-              formattedResults += `\n- SEARCH_WEB "${tr.arg}" succeeded. Results:\n${resultsList}`;
+              if (tr.results && tr.results.length > 0) {
+                const resultsList = tr.results.map((r, i) => `${i+1}. [${r.title}](${r.url})\n   ${r.snippet}`).join("\n");
+                formattedResults += `\n- SEARCH_WEB "${tr.arg}" succeeded. Results:\n${resultsList}`;
+              } else {
+                formattedResults += `\n- SEARCH_WEB "${tr.arg}" succeeded. No search results were found.`;
+              }
             }
           } else {
             formattedResults += `\n- ${tr.tool} "${tr.arg}" failed: ${tr.error}`;
