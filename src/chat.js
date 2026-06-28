@@ -140,7 +140,7 @@ export async function startChat(options = {}) {
       "/providers", "/export", "/status", "/copy", "/exit", "/quit",
       "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd", "/write",
       "/commit", "/run", "/history", "/autopilot", "/tokens", "/update",
-      "/review", "/diagnose", "/explain", "/refactor", "/bug", "/doc", "/translate",
+      "/review", "/diagnose", "/goal", "/explain", "/refactor", "/bug", "/doc", "/translate",
       "/search", "/git", "/dashboard", "/cd", "/mic"
     ];
     const customCmds = aiConfig.CUSTOM_COMMANDS || {};
@@ -437,7 +437,7 @@ export async function startChat(options = {}) {
         "/providers", "/export", "/status", "/copy", "/exit", "/quit",
         "/theme", "/themes", "/history-clear", "/game", "/abort", "/cmd",
         "/guess", "/write", "/commit", "/run", "/history", "/autopilot", "/tokens",
-        "/update", "/review", "/diagnose", "/explain", "/refactor", "/bug", "/doc",
+        "/update", "/review", "/diagnose", "/goal", "/explain", "/refactor", "/bug", "/doc",
         "/translate", "/search", "/git", "/dashboard", "/cd", "/mic"
       ];
       
@@ -545,6 +545,10 @@ async function handleCommand(input, ctx) {
 
     case "/diagnose":
       await handleDiagnoseCommand(args, ctx);
+      break;
+
+    case "/goal":
+      await handleGoalCommand(args, ctx);
       break;
 
     case "/explain":
@@ -676,6 +680,7 @@ function showHelp(aiConfig) {
   console.log(keyValue("/run <command>", "Execute a shell command interactively"));
   console.log(keyValue("/review", "Run git diff and stream an AI code review"));
   console.log(keyValue("/diagnose [cmd]", "Run build/tests and AI-debug any errors"));
+  console.log(keyValue("/goal <task>", "Run an autonomous feedback loop to achieve a specific goal"));
   console.log(keyValue("/explain <file>", "AI-explain the design and logic of a file"));
   console.log(keyValue("/refactor <file>", "AI-refactor the code of a target file"));
   console.log(keyValue("/bug <file>", "AI-audit a file to find potential logic bugs"));
@@ -1758,6 +1763,161 @@ async function handleSearchCommand(args, ctx) {
     console.log("  " + colors.success(`✓ Found ${results.length} matches across the workspace.`));
   }
   console.log(separator("━") + "\n");
+}
+
+/**
+ * Handler for the /goal command (autonomous goal execution loop).
+ */
+export async function handleGoalCommand(args, ctx) {
+  const goal = args.join(" ").trim();
+  if (!goal) {
+    console.log("\n" + label.system + " " + colors.warning("Usage: /goal <high-level goal statement>\n"));
+    console.log("  " + colors.muted("Example: ") + colors.accent("/goal implement user login page") + "\n");
+    return;
+  }
+
+  console.log("\n" + label.system + " " + colors.brand("🤖 STARTING AUTONOMOUS GOAL SOLVER"));
+  console.log(separator("─"));
+  console.log(keyValue("  Target Goal", goal));
+  console.log("");
+
+  let iteration = 1;
+  const maxIterations = 5;
+  
+  let currentPrompt = `
+The user has set the following goal for you to achieve in the workspace:
+"${goal}"
+
+Please analyze this goal, inspect the workspace files as needed, planning and executing step-by-step changes.
+Once you have fully completed and verified the goal, end your final response with the exact marker [GOAL_ACHIEVED] to stop the loop.
+If you hit an unrecoverable roadblock and cannot achieve the goal, output [GOAL_FAILED].
+`;
+
+  const goalSystemPrompt = `
+You are Aether Autopilot in Autonomous Goal Solver Mode.
+The user has set the following goal: "${goal}"
+
+Your task is to take any actions necessary to achieve this goal. You have full access to workspace tools:
+- Read files: [READ_FILE: path/to/file]
+- Write files:
+  [WRITE_FILE: path/to/file]
+  <new file content>
+  [END_WRITE]
+- Search the web: [SEARCH_WEB: query]
+- Run commands: [RUN_COMMAND: command]
+
+Rules:
+- Plan carefully and execute actions incrementally.
+- After each action, the environment will run the tool and return the results to you.
+- Once you believe the goal has been fully achieved and verified (e.g., via running tests or inspecting files), output the exact text [GOAL_ACHIEVED] at the end of your response to signal completion.
+- If you cannot complete the goal or run into an unrecoverable error, output [GOAL_FAILED] with a summary of what went wrong.
+`;
+
+  while (iteration <= maxIterations) {
+    console.log(colors.accent(`\n🤖 [Autopilot Goal Solver - Iteration ${iteration}/${maxIterations}]`));
+
+    const spinner = createSpinner(colors.muted(`Aether planning & executing next steps...`));
+    spinner.start();
+
+    let streamedText = "";
+    let hasStartedStreaming = false;
+    const filter = new StreamFilter(process.stdout.write.bind(process.stdout));
+    const onToken = (token) => {
+      if (!hasStartedStreaming) {
+        hasStartedStreaming = true;
+        spinner.stop();
+      }
+      filter.write(token);
+      streamedText += token;
+    };
+
+    let result;
+    try {
+      result = await routePrompt(currentPrompt, goalSystemPrompt, ctx.aiConfig, onToken, ctx.history);
+      spinner.stop();
+      filter.flush();
+    } catch (routeErr) {
+      spinner.stop();
+      console.log("\n" + label.error + " " + colors.danger(`AI Routing Failed: ${routeErr.message}`));
+      break;
+    }
+
+    if (hasStartedStreaming) {
+      clearStreamedText(filter.filteredText);
+    }
+
+    console.log("");
+    console.log(label.aether + " " + providerBadge(result));
+    console.log(separator("─"));
+    console.log("");
+
+    const rendered = getMarked().parse(result.text);
+    console.log(rendered);
+    console.log(separator("─"));
+
+    ctx.history.push({ role: "user", content: currentPrompt, timestamp: new Date() });
+    ctx.history.push({
+      role: "assistant",
+      content: result.text,
+      provider: result.provider,
+      model: result.model,
+      node: result.node,
+      timestamp: new Date(),
+    });
+    await saveHistory(ctx.history, ctx.currentMode.name);
+
+    if (result.text.includes("[GOAL_ACHIEVED]")) {
+      console.log("\n" + label.system + " " + colors.success(`✓ Goal successfully achieved and verified!\n`));
+      break;
+    }
+
+    if (result.text.includes("[GOAL_FAILED]")) {
+      console.log("\n" + label.system + " " + colors.danger(`❌ Autopilot reported goal failure.\n`));
+      break;
+    }
+
+    const { processAgentBlocks } = await import("./agent.js");
+    const toolResults = await processAgentBlocks(result.text, ctx.aiConfig, ctx.rl);
+
+    let toolOutputs = "### Agent Tool Outputs:\n";
+    if (toolResults.length === 0) {
+      toolOutputs += "\n(No tool actions were executed in the last iteration. Please execute a tool or finish the task.)";
+    } else {
+      for (const tr of toolResults) {
+        if (tr.success) {
+          if (tr.tool === "READ_FILE") {
+            toolOutputs += `\n- READ_FILE "${tr.arg}" succeeded. Content:\n\`\`\`\n${tr.content}\n\`\`\`;`;
+          } else if (tr.tool === "WRITE_FILE") {
+            toolOutputs += `\n- WRITE_FILE "${tr.arg}" succeeded.`;
+          } else if (tr.tool === "RUN_COMMAND") {
+            toolOutputs += `\n- RUN_COMMAND "${tr.arg}" succeeded. Output:\n\`\`\`\nSTDOUT:\n${tr.stdout}\nSTDERR:\n${tr.stderr}\n\`\`\`;`;
+          } else if (tr.tool === "SEARCH_WEB") {
+            if (tr.results && tr.results.length > 0) {
+              const list = tr.results.map((r, i) => `${i+1}. [${r.title}](${r.url})\n   ${r.snippet}`).join("\n");
+              toolOutputs += `\n- SEARCH_WEB "${tr.arg}" succeeded. Results:\n${list}`;
+            } else {
+              toolOutputs += `\n- SEARCH_WEB "${tr.arg}" succeeded. No search results were found.`;
+            }
+          }
+        } else {
+          toolOutputs += `\n- ${tr.tool} "${tr.arg}" failed: ${tr.error}`;
+        }
+      }
+    }
+
+    currentPrompt = `
+${toolOutputs}
+
+Please analyze the results of your actions and proceed with the next step to achieve the goal: "${goal}".
+Once you believe the goal has been fully achieved and verified, end your final response with [GOAL_ACHIEVED] to stop the loop.
+If you cannot achieve the goal, output [GOAL_FAILED].
+`;
+    iteration++;
+  }
+
+  if (iteration > maxIterations) {
+    console.log("\n" + label.system + " " + colors.warning(`⚠️ Max autonomous goal solver iterations (${maxIterations}) reached.\n`));
+  }
 }
 
 /**

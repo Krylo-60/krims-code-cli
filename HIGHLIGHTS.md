@@ -1,3 +1,8 @@
+# Aether CLI v1.4.9 Highlights
+- **Interactive `/goal` Command**:
+  - Implements the new `/goal <task>` interactive command.
+  - Spawns an autonomous goal solver feedback loop that reads, plans, writes, and executes commands iteratively until completion is flagged via `[GOAL_ACHIEVED]`.
+
 # Aether CLI v1.4.8 Highlights
 - **Dynamic Theme-Aware Code Syntax Highlighting**:
   - Implements rich, theme-aware terminal code syntax highlighting for JavaScript, Python, HTML/XML, CSS, and Bash.

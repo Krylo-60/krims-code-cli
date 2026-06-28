@@ -9,7 +9,7 @@ process.env.HOME = tempHome;
 process.env.NODE_ENV = "test";
 
 const originalFetch = globalThis.fetch;
-const { handleAutopilotDebug } = await import("../src/chat.js");
+const { handleAutopilotDebug, handleGoalCommand } = await import("../src/chat.js");
 
 test("Autopilot Self-Correcting Debug Suite", async (t) => {
   before(() => {
@@ -84,6 +84,63 @@ test("Autopilot Self-Correcting Debug Suite", async (t) => {
       // The test command should succeed on the second attempt
       const hasCorrectedSuccess = logged.some(l => l && l.includes("Diagnostics passed successfully"));
       assert.ok(hasCorrectedSuccess);
+    } finally {
+      console.log = origLog;
+    }
+  });
+
+  await t.test("handleGoalCommand runs iterations, executes tools, and stops when [GOAL_ACHIEVED] is matched", async () => {
+    const goalFile = join(tempHome, "goal.txt");
+    
+    let fetchCallCount = 0;
+    globalThis.fetch = async (url, options) => {
+      fetchCallCount++;
+      if (fetchCallCount === 1) {
+        // Write the file
+        return {
+          ok: true,
+          json: async () => ({
+            choices: [{
+              message: {
+                content: `I will solve this goal by writing to ${goalFile}.\n[WRITE_FILE: ${goalFile}]\ngoal completed!\n[END_WRITE]`
+              }
+            }]
+          })
+        };
+      } else {
+        // Report achieved
+        return {
+          ok: true,
+          json: async () => ({
+            choices: [{
+              message: {
+                content: `Everything is done.\n[GOAL_ACHIEVED]`
+              }
+            }]
+          })
+        };
+      }
+    };
+
+    const ctx = {
+      aiConfig: {
+        GROQ_API_KEY: "mock-key",
+        AUTOPILOT: "machine"
+      },
+      rl: { pause: () => {}, resume: () => {} },
+      history: [],
+      currentMode: { name: "titan" }
+    };
+
+    let logged = [];
+    const origLog = console.log;
+    console.log = (m) => logged.push(m);
+
+    try {
+      await handleGoalCommand(["create a file named goal.txt"], ctx);
+      
+      const hasSuccess = logged.some(l => l && l.includes("Goal successfully achieved and verified"));
+      assert.ok(hasSuccess);
     } finally {
       console.log = origLog;
     }
