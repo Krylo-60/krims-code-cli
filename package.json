@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "@krishivpb60/krims-code-cli",
   "version": "1.5.2",
   "description": "Krims Code AI — A cyberpunk command-line AI assistant with multi-mode reasoning, 12-node failover mesh, file context injection, and offline fallbacks.",
@@ -27,9 +27,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Krylo-60/aether-ai-cli.git"
+    "url": "git+https://github.com/Krylo-60/krims-code-cli.git"
   },
-  "homepage": "https://github.com/Krylo-60/aether-ai-cli#readme",
+  "homepage": "https://github.com/Krylo-60/krims-code-cli#readme",
   "publishConfig": {
     "access": "public"
   },

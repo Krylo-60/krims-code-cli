@@ -38,7 +38,7 @@ export async function callOpenAICompatible(prompt, systemPrompt, apiKey, baseUrl
 
   // OpenRouter requires extra headers
   if (baseUrl.includes("openrouter.ai")) {
-    headers["HTTP-Referer"] = "https://github.com/Krylo-60/aether-ai-cli";
+    headers["HTTP-Referer"] = "https://github.com/Krylo-60/krims-code-cli";
     headers["X-Title"] = "Krims Code AI CLI";
   }
 

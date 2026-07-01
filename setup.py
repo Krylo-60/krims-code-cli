@@ -42,7 +42,7 @@ setup(
     description="Krims Code AI — Universal AI Gateway CLI (Python Wrapper)",
     long_description=open("README.md", "r", encoding="utf-8").read() if os.path.exists("README.md") else "",
     long_description_content_type="text/markdown",
-    url="https://github.com/Krylo-60/aether-ai-cli",
+    url="https://github.com/Krylo-60/krims-code-cli",
     packages=find_packages(),
     package_data={
         "krims_pip": package_files(os.path.join('krims_pip', 'node_project')),

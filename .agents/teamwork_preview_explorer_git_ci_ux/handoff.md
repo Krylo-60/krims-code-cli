@@ -1,4 +1,4 @@
-# Aether AI CLI — Exploration Handoff Report
+﻿# Aether AI CLI — Exploration Handoff Report
 
 This report summarizes findings regarding local Git status, configuration loading, context parsing, gateway routing, mathematical fallbacks, CI/CD setup, and CLI UX improvements.
 
@@ -69,7 +69,7 @@ git commit -m "Initial commit: Aether Core AI CLI codebase"
 git branch -M main
 
 # Add remote origin
-git remote add origin https://github.com/Krylo-60/aether-ai-cli.git
+git remote add origin https://github.com/Krylo-60/krims-code-cli.git
 ```
 
 #### Proposed `.gitignore` Content:

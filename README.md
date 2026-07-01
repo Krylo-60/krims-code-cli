@@ -276,7 +276,7 @@ What errors are in this file?
 
 ```bash
 # Clone the repo
-git clone https://github.com/Krylo-60/aether-ai-cli.git
+git clone https://github.com/Krylo-60/krims-code-cli.git
 cd krims-code-cli
 
 # Install dependencies
