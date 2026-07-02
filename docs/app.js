@@ -3,7 +3,7 @@
 
 const GITHUB_REPO = "Krylo-60/krims-code-cli";
 const NPM_PACKAGE = "@krishivpb60/krims-code-cli";
-const PYPI_PACKAGE = "krims-code-agent-cli";
+const PYPI_PACKAGE = "krims-code-cli";
 
 // ══════════════════════════════════════════════════════
 //  State

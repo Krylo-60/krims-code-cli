@@ -1,7 +1,7 @@
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// Krims Code AI CLI â€” Main CLI Logic & Command Routing
-// Universal AI Gateway â€” Supports 13+ providers
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+﻿// ═══════════════════════════════════════════════════════════
+// Krims Code AI CLI — Main CLI Logic & Command Routing
+// Universal AI Gateway — Supports 13+ providers
+// ═══════════════════════════════════════════════════════════
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -66,11 +66,11 @@ export async function createCLI(argv) {
   const program = new Command();
 
   program
-    .name("KRIMS CODE")
-    .description("Krims Code AI v110 â€” Universal AI Gateway CLI\n  Supports 13+ AI providers â€¢ Free & paid models â€¢ Local fallbacks")
+    .name("krims-code")
+    .description("Krims Code AI — Universal AI Gateway CLI\n  Supports 13+ AI providers • Free & paid models • Local fallbacks")
     .version(VERSION, "-v, --version");
 
-  // â”€â”€ Chat Command â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Chat Command ────────────────────────────────────────
   program
     .command("chat")
     .description("Start an interactive chat session")
@@ -80,7 +80,7 @@ export async function createCLI(argv) {
       await startChat({ mode: opts.mode, preferredProvider: opts.provider });
     });
 
-  // â”€â”€ Ask Command â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Ask Command ─────────────────────────────────────────
   program
     .command("ask <prompt...>")
     .description("Send a single prompt and get a response")
@@ -94,7 +94,7 @@ export async function createCLI(argv) {
       await handleAsk(prompt, opts);
     });
 
-  // â”€â”€ Config Command â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Config Command ──────────────────────────────────────
   const configCmd = program
     .command("config")
     .description("Manage API keys and settings");
@@ -141,7 +141,7 @@ export async function createCLI(argv) {
       console.log("\n" + label.config + " " + colors.text(getConfigPath()) + "\n");
     });
 
-  // â”€â”€ Providers Command â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Providers Command ───────────────────────────────────
   program
     .command("providers")
     .description("List all supported AI providers and their status")
@@ -150,7 +150,7 @@ export async function createCLI(argv) {
       await handleProviders(opts);
     });
 
-  // â”€â”€ Models Command â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Models Command ──────────────────────────────────────
   program
     .command("models [provider]")
     .description("List available models for a provider")
@@ -158,7 +158,7 @@ export async function createCLI(argv) {
       handleModels(provider);
     });
 
-  // â”€â”€ Modes Command â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Modes Command ───────────────────────────────────────
   program
     .command("modes")
     .description("List all reasoning modes")
@@ -166,7 +166,7 @@ export async function createCLI(argv) {
       handleModes();
     });
 
-  // â”€â”€ Setup Command â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Setup Command ───────────────────────────────────────
   program
     .command("setup")
     .description("Interactive guided setup for API keys")
@@ -208,7 +208,7 @@ export async function createCLI(argv) {
     });
   }
 
-  // â”€â”€ Default: Show help â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Default: Show help ──────────────────────────────────
   program.action(() => {
     showMiniBanner();
     program.help();
@@ -217,9 +217,9 @@ export async function createCLI(argv) {
   await program.parseAsync(argv);
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
 // COMMAND HANDLERS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
 
 async function handleAsk(prompt, opts) {
   const mode = getModeByName(opts.mode) || MODES[DEFAULT_MODE];
@@ -251,7 +251,7 @@ async function handleAsk(prompt, opts) {
   }
 
   if (!opts.raw) {
-    console.log(label.mode + " " + colors.muted(`${mode.label} â€¢ ${mode.layer}`));
+    console.log(label.mode + " " + colors.muted(`${mode.label} • ${mode.layer}`));
   }
 
   const queryStartTime = Date.now();
@@ -296,8 +296,8 @@ async function handleAsk(prompt, opts) {
         clearStreamedText(filter ? filter.filteredText : streamedText);
       }
       console.log("");
-      console.log(label.KRIMS CODE + " " + colors.dim(`via ${result.provider}${result.model ? ` (${result.model})` : ""} â€¢ Node ${result.node}`));
-      console.log(separator("â”€"));
+      console.log(label.krims + " " + colors.dim(`via ${result.provider}${result.model ? ` (${result.model})` : ""} • Node ${result.node}`));
+      console.log(separator("─"));
       console.log("");
 
       if (result.provider === "local" || result.provider === "offline-fallback") {
@@ -305,7 +305,7 @@ async function handleAsk(prompt, opts) {
       } else {
         let displayText = result.text;
         const cleanedText = displayText.replace(/\[WRITE_FILE:\s*([^\n\]]+)\][\s\S]*?\[END_WRITE\]/g, (match, p1) => {
-          return `\n\n${colors.brand("âš¡ [File creation request: " + p1 + "]")}\n\n`;
+          return `\n\n${colors.brand("⚡ [File creation request: " + p1 + "]")}\n\n`;
         });
         const rendered = getMarked().parse(cleanedText);
         console.log(rendered);
@@ -318,15 +318,15 @@ async function handleAsk(prompt, opts) {
         if (streamElapsed > 0.05) {
           const estimatedTokens = Math.max(1, Math.round(streamedText.length / 4));
           const tps = (estimatedTokens / streamElapsed).toFixed(1);
-          speedText = ` â€¢ ${tps} tok/s`;
+          speedText = ` • ${tps} tok/s`;
         }
       }
 
-      console.log(separator("â”€"));
+      console.log(separator("─"));
       console.log(
-        "  " + colors.dim(`Node ${result.node} â€¢ ${result.provider}`) +
-        (result.model ? colors.dim(` â€¢ ${result.model}`) : "") +
-        colors.dim(` â€¢ ${elapsedSec}s${speedText}`)
+        "  " + colors.dim(`Node ${result.node} • ${result.provider}`) +
+        (result.model ? colors.dim(` • ${result.model}`) : "") +
+        colors.dim(` • ${elapsedSec}s${speedText}`)
       );
       console.log("");
       
@@ -350,9 +350,9 @@ async function handleAsk(prompt, opts) {
             const dir = dirname(finalPath);
             await mkdir(dir, { recursive: true });
             await writeFile(finalPath, fileWrite.content, "utf-8");
-            console.log("  " + colors.success(`âœ“ File created successfully!\n`));
+            console.log("  " + colors.success(`✓ File created successfully!\n`));
           } catch (err) {
-            console.log("  " + colors.danger(`âœ— Write failed: ${err.message}\n`));
+            console.log("  " + colors.danger(`✗ Write failed: ${err.message}\n`));
           }
         }
       }
@@ -376,9 +376,9 @@ async function handleConfigSet(key, value) {
 
   await setConfigValue(normalizedKey, value);
   const maskedValue = normalizedKey.includes("KEY") && value.length > 8
-    ? value.slice(0, 6) + "â€¢â€¢â€¢" + value.slice(-3)
+    ? value.slice(0, 6) + "•••" + value.slice(-3)
     : value;
-  console.log("\n" + label.config + " " + colors.success(`âœ“ Set ${normalizedKey} = ${maskedValue}`));
+  console.log("\n" + label.config + " " + colors.success(`✓ Set ${normalizedKey} = ${maskedValue}`));
   console.log("  " + colors.muted(`Saved to ${getConfigPath()}`) + "\n");
 }
 
@@ -390,7 +390,7 @@ async function handleConfigGet(key) {
     console.log("\n" + label.config + " " + colors.muted(`"${normalizedKey}" is not set.\n`));
   } else {
     const masked = normalizedKey.includes("KEY") && typeof value === "string" && value.length > 8
-      ? value.slice(0, 6) + "â€¢â€¢â€¢" + value.slice(-3)
+      ? value.slice(0, 6) + "•••" + value.slice(-3)
       : value;
     console.log("\n" + label.config + " " + keyValue(normalizedKey, masked) + "\n");
   }
@@ -400,7 +400,7 @@ async function handleConfigList() {
   const exists = await configExists();
   if (!exists) {
     console.log("\n" + label.config + " " + colors.muted("No config file found."));
-    console.log("  " + colors.muted("Run ") + colors.accent("KRIMS CODE setup") + colors.muted(" for guided setup.\n"));
+    console.log("  " + colors.muted("Run ") + colors.accent("krims-code setup") + colors.muted(" for guided setup.\n"));
     return;
   }
 
@@ -413,8 +413,8 @@ async function handleConfigList() {
   }
 
   console.log("");
-  console.log(colors.brand("  â—ˆ CONFIGURATION"));
-  console.log(separator("â”€"));
+  console.log(colors.brand("  ◈ CONFIGURATION"));
+  console.log(separator("─"));
   for (const [k, v] of Object.entries(config)) {
     console.log(keyValue("  " + k, v));
   }
@@ -425,12 +425,12 @@ async function handleConfigList() {
 async function handleConfigDelete(key) {
   const normalizedKey = key.toUpperCase();
   await deleteConfigValue(normalizedKey);
-  console.log("\n" + label.config + " " + colors.success(`âœ“ Deleted "${normalizedKey}"`) + "\n");
+  console.log("\n" + label.config + " " + colors.success(`✓ Deleted "${normalizedKey}"`) + "\n");
 }
 
 async function handleConfigReset() {
   await resetConfig();
-  console.log("\n" + label.config + " " + colors.success("âœ“ All configuration cleared.") + "\n");
+  console.log("\n" + label.config + " " + colors.success("✓ All configuration cleared.") + "\n");
 }
 
 async function handleProviders(opts) {
@@ -439,18 +439,18 @@ async function handleProviders(opts) {
   const activeIds = new Set(active.map((a) => a.id));
 
   console.log("");
-  console.log(colors.brand("  âš¡ SUPPORTED AI PROVIDERS"));
-  console.log(separator("â”€"));
+  console.log(colors.brand("  ⚡ SUPPORTED AI PROVIDERS"));
+  console.log(separator("─"));
 
   const tiers = getProvidersByTier();
   const sections = [
-    { label: "ðŸ†“ FREE TIER", providers: tiers.free, color: "#67ffb0" },
-    { label: "ðŸ”“ FREE + PAID", providers: tiers["free+paid"], color: "#ffb900" },
-    { label: "ðŸ’Ž PAID", providers: tiers.paid, color: "#6ce8ff" },
+    { label: "🆓 FREE TIER", providers: tiers.free, color: "#67ffb0" },
+    { label: "🔓 FREE + PAID", providers: tiers["free+paid"], color: "#ffb900" },
+    { label: "💎 PAID", providers: tiers.paid, color: "#6ce8ff" },
   ];
 
   for (const section of sections) {
-    if (opts.free && section.label === "ðŸ’Ž PAID") continue;
+    if (opts.free && section.label === "💎 PAID") continue;
 
     console.log("");
     console.log("  " + chalk.hex(section.color).bold(section.label));
@@ -458,8 +458,8 @@ async function handleProviders(opts) {
 
     for (const p of section.providers) {
       const status = activeIds.has(p.id)
-        ? colors.success(" âœ“ ACTIVE")
-        : colors.dim(" â—‹ Not configured");
+        ? colors.success(" ✓ ACTIVE")
+        : colors.dim(" ○ Not configured");
       const name = chalk.hex(section.color).bold(p.name.padEnd(18));
       console.log(`  ${name} ${status}`);
       console.log(`  ${"".padEnd(18)} ${colors.muted(p.description)}`);
@@ -468,24 +468,24 @@ async function handleProviders(opts) {
     }
   }
 
-  console.log(separator("â”€"));
-  console.log("  " + colors.muted("Configure: ") + colors.accent("KRIMS CODE config set <KEY_NAME> <your-key>"));
-  console.log("  " + colors.muted("Quick setup: ") + colors.accent("KRIMS CODE setup"));
+  console.log(separator("─"));
+  console.log("  " + colors.muted("Configure: ") + colors.accent("krims-code config set <KEY_NAME> <your-key>"));
+  console.log("  " + colors.muted("Quick setup: ") + colors.accent("krims-code setup"));
   console.log("");
 }
 
 function handleModels(providerName) {
   if (!providerName) {
     console.log("");
-    console.log(colors.brand("  â—ˆ MODELS BY PROVIDER"));
-    console.log(separator("â”€"));
+    console.log(colors.brand("  ◈ MODELS BY PROVIDER"));
+    console.log(separator("─"));
 
     for (const [id, p] of Object.entries(PROVIDERS)) {
       console.log("");
       console.log("  " + colors.accent(p.name));
       for (const m of p.models) {
         const isDefault = m === p.defaultModel;
-        console.log("  " + (isDefault ? colors.accent3("  â˜… " + m) : colors.muted("    " + m)));
+        console.log("  " + (isDefault ? colors.accent3("  ★ " + m) : colors.muted("    " + m)));
       }
     }
     console.log("");
@@ -502,20 +502,20 @@ function handleModels(providerName) {
   }
 
   console.log("");
-  console.log(colors.brand(`  â—ˆ ${provider.name} MODELS`));
-  console.log(separator("â”€"));
+  console.log(colors.brand(`  ◈ ${provider.name} MODELS`));
+  console.log(separator("─"));
   for (const m of provider.models) {
     const isDefault = m === provider.defaultModel;
-    console.log("  " + (isDefault ? colors.accent3("â˜… " + m + " (default)") : colors.text("  " + m)));
+    console.log("  " + (isDefault ? colors.accent3("★ " + m + " (default)") : colors.text("  " + m)));
   }
   console.log("");
-  console.log("  " + colors.muted("Override: ") + colors.accent(`KRIMS CODE ask --model ${provider.models[0]} "prompt"`) + "\n");
+  console.log("  " + colors.muted("Override: ") + colors.accent(`krims-code ask --model ${provider.models[0]} "prompt"`) + "\n");
 }
 
 function handleModes() {
   console.log("");
-  console.log(colors.brand("  â—ˆ KRIMS CODE REASONING MODES"));
-  console.log(separator("â”€"));
+  console.log(colors.brand("  ◈ KRIMS CODE REASONING MODES"));
+  console.log(separator("─"));
   console.log("");
 
   for (const mode of Object.values(MODES)) {
@@ -526,7 +526,7 @@ function handleModes() {
     const sig = mode.signal;
     const bar = (val) => {
       const filled = Math.round(val / 10);
-      return chalk.hex("#6ce8ff")("â–ˆ".repeat(filled)) + chalk.hex("#1a2a3a")("â–‘".repeat(10 - filled)) + colors.dim(` ${val}%`);
+      return chalk.hex("#6ce8ff")("█".repeat(filled)) + chalk.hex("#1a2a3a")("░".repeat(10 - filled)) + colors.dim(` ${val}%`);
     };
     console.log(
       "  " + colors.dim("RSN ") + bar(sig.reasoning) +
@@ -544,8 +544,8 @@ async function handleSetup() {
   const { createInterface } = await import("node:readline");
 
   console.log("");
-  console.log(colors.brand("  âš¡ KRIMS CODE SETUP WIZARD"));
-  console.log(separator("â”€"));
+  console.log(colors.brand("  ⚡ KRIMS CODE SETUP WIZARD"));
+  console.log(separator("─"));
   console.log("");
   console.log(colors.text("  Configure your AI providers. Press Enter to skip any provider."));
   console.log(colors.muted("  Keys are stored locally at: " + getConfigPath()));
@@ -570,9 +570,9 @@ async function handleSetup() {
     { id: "together", hint: "Free credits at https://api.together.xyz" },
     { id: "cerebras", hint: "Free tier at https://cloud.cerebras.ai" },
     { id: "cohere", hint: "Free dev key at https://dashboard.cohere.com" },
-    { id: "openai", hint: "Paid â€” https://platform.openai.com/api-keys" },
-    { id: "anthropic", hint: "Paid â€” https://console.anthropic.com" },
-    { id: "xai", hint: "Paid â€” https://console.x.ai" },
+    { id: "openai", hint: "Paid — https://platform.openai.com/api-keys" },
+    { id: "anthropic", hint: "Paid — https://console.anthropic.com" },
+    { id: "xai", hint: "Paid — https://console.x.ai" },
     { id: "mistral", hint: "https://console.mistral.ai" },
     { id: "deepseek", hint: "https://platform.deepseek.com" },
     { id: "perplexity", hint: "https://www.perplexity.ai/settings/api" },
@@ -591,13 +591,13 @@ async function handleSetup() {
         ? chalk.hex("#ffb900")("[FREE+PAID]")
         : chalk.hex("#6ce8ff")("[PAID]");
 
-    console.log(`  ${tierBadge} ${colors.text.bold(provider.name)} â€” ${colors.dim(provider.description)}`);
+    console.log(`  ${tierBadge} ${colors.text.bold(provider.name)} — ${colors.dim(provider.description)}`);
     console.log("  " + colors.dim(hint));
 
     const key = await ask(`${provider.key}:`);
     if (key) {
       await setConfigValue(provider.key, key);
-      console.log("  " + colors.success("âœ“ Saved!") + "\n");
+      console.log("  " + colors.success("✓ Saved!") + "\n");
       configured++;
     } else {
       console.log("  " + colors.dim("Skipped") + "\n");
@@ -606,22 +606,22 @@ async function handleSetup() {
 
   rl.close();
 
-  console.log(separator("â”€", 62));
+  console.log(separator("─", 62));
   if (configured > 0) {
-    console.log("\n  " + colors.success(`âœ“ Setup complete! ${configured} provider(s) configured.`));
-    console.log("  " + colors.muted("Start chatting: ") + colors.accent("KRIMS CODE chat"));
-    console.log("  " + colors.muted("Quick query: ") + colors.accent('KRIMS CODE ask "Hello!"'));
+    console.log("\n  " + colors.success(`✓ Setup complete! ${configured} provider(s) configured.`));
+    console.log("  " + colors.muted("Start chatting: ") + colors.accent("krims-code chat"));
+    console.log("  " + colors.muted("Quick query: ") + colors.accent('krims-code ask "Hello!"'));
   } else {
-    console.log("\n  " + colors.warning("No providers configured. KRIMS CODE will use Krylo fallback mode."));
-    console.log("  " + colors.muted("Run ") + colors.accent("KRIMS CODE setup") + colors.muted(" again anytime."));
+    console.log("\n  " + colors.warning("No providers configured. Krims Code will use Krylo fallback mode."));
+    console.log("  " + colors.muted("Run ") + colors.accent("krims-code setup") + colors.muted(" again anytime."));
   }
   console.log("");
 }
 
 function showMiniBanner() {
   console.log("");
-  console.log(colors.brand("  âš¡ Krims Code AI v110") + colors.dim(" â€” Universal AI Gateway"));
-  console.log(separator("â”€"));
+  console.log(colors.brand("  ⚡ Krims Code AI v110") + colors.dim(" — Universal AI Gateway"));
+  console.log(separator("─"));
   console.log("");
 }
 

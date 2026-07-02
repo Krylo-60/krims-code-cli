@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // ═══════════════════════════════════════════════════════════
-// Krims Code AI CLI — Entry Point
+// KRIMS CODE AI CLI — Entry Point
 // Universal AI Gateway — 13+ Providers, Free & Paid
 // ═══════════════════════════════════════════════════════════
 

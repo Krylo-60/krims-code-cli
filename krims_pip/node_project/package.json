@@ -1,14 +1,14 @@
 {
-  "name": "@krishivpb60/KRIMS CODE-ai-cli",
+  "name": "@krishivpb60/krims-code-cli",
   "version": "1.5.2",
-  "description": "Krims Code AI â€” A cyberpunk command-line AI assistant with multi-mode reasoning, 12-node failover mesh, file context injection, and offline fallbacks.",
+  "description": "Krims Code AI — A cyberpunk command-line AI assistant with multi-mode reasoning, 12-node failover mesh, file context injection, and offline fallbacks.",
   "main": "src/cli.js",
   "bin": {
-    "KRIMS CODE": "bin/KRIMS CODE.js"
+    "krims-code": "bin/krims-code.js"
   },
   "type": "module",
   "scripts": {
-    "start": "node bin/KRIMS CODE.js",
+    "start": "node bin/krims-code.js",
     "test": "node --test"
   },
   "keywords": [
@@ -18,7 +18,7 @@
     "grok",
     "xai",
     "chatbot",
-    "KRIMS CODE",
+    "Krims Code",
     "cyberpunk",
     "terminal",
     "assistant"
@@ -27,9 +27,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Krylo-60/KRIMS CODE-ai-cli.git"
+    "url": "git+https://github.com/Krylo-60/krims-code-cli.git"
   },
-  "homepage": "https://github.com/Krylo-60/KRIMS CODE-ai-cli#readme",
+  "homepage": "https://github.com/Krylo-60/krims-code-cli#readme",
   "publishConfig": {
     "access": "public"
   },

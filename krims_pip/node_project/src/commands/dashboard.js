@@ -16,7 +16,7 @@ export default {
     const parsedPort = parseInt(options.port, 10) || 5050;
 
     console.log("");
-    console.log(label.system + " " + colors.brand("Initializing KRIMS CODE Visual Telemetry HUD..."));
+    console.log(label.system + " " + colors.brand("Initializing Krims Code Visual Telemetry HUD..."));
 
     try {
       const { port } = await startTelemetryServer(parsedPort);
@@ -37,7 +37,7 @@ export default {
 
     try {
       const { port } = await startDashboardServer();
-      console.log("\n" + label.system + " " + colors.brand("📊 KRIMS CODE WEB TELEMETRY DASHBOARD"));
+      console.log("\n" + label.system + " " + colors.brand("📊 Krims Code WEB TELEMETRY DASHBOARD"));
       console.log(separator("─"));
       console.log(keyValue("  Status", colors.success("ONLINE")));
       console.log(keyValue("  Local URL", `http://localhost:${port}`));

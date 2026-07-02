@@ -86,7 +86,7 @@ async function getGithubRepoInfo() {
   return info;
 }
 
-// Retrieves GITHUB token from KRIMS CODE config or env variables
+// Retrieves GITHUB token from krims-code config or env variables
 async function getGithubToken() {
   const aiConfig = await getAIConfig();
   const token = aiConfig.GITHUB_API_KEY || 
@@ -100,7 +100,7 @@ async function getGithubToken() {
 async function githubFetch(endpoint, token) {
   const headers = {
     Accept: "application/vnd.github.v3+json",
-    "User-Agent": "KRIMS CODE-AI-CLI"
+    "User-Agent": "krims-code-cli"
   };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -164,7 +164,7 @@ function showGithubHelp() {
   console.log("");
   console.log(colors.brand("  ⚡ GITHUB COMMAND USAGE"));
   console.log(separator("─"));
-  console.log(keyValue("  Usage", "KRIMS CODE github <subcommand> [options]"));
+  console.log(keyValue("  Usage", "Krims Code github <subcommand> [options]"));
   console.log(keyValue("  Chat Usage", "/github <subcommand> [options]"));
   console.log("");
   console.log(colors.accent("  ◈ Subcommands:"));

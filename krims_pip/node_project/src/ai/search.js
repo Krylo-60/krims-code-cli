@@ -7,8 +7,8 @@ const IGNORE_DIRS = new Set([
   "build",
   "dist",
   ".agents",
-  "KRIMS CODE_ai_agent_cli.egg-info",
-  "KRIMS CODE_ai_cli.egg-info",
+  "krims_code_agent_cli.egg-info",
+  "krims_code_cli.egg-info",
   "temp-test-home",
   "temp-test-home-updater",
   "temp-test-home-search"

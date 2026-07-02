@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aether CLI // Telemetry Dashboard</title>
+  <title>Krims Code CLI // Telemetry Dashboard</title>
   <!-- Cyberpunk fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,7 +76,7 @@
     }
 
     .hud-frame::after {
-      content: "AETHER CLI V1.5.2";
+      content: "Krims Code CLI V1.5.2";
       position: absolute;
       bottom: -12px;
       right: 20px;
@@ -484,7 +484,7 @@
   <div class="hud-frame">
     <header>
       <div class="title-area">
-        <h1>AETHER <span>TELEMETRY</span></h1>
+        <h1>Krims Code <span>TELEMETRY</span></h1>
         <div class="subtitle">// DECISION ENGINE DIAGNOSTICS & SYSTEM MESH STATUS</div>
       </div>
       <div class="status-badge" id="hud-status">CORRELATING MESH</div>
@@ -805,7 +805,7 @@
         const sender = document.createElement("span");
         sender.style.fontWeight = "bold";
         sender.style.color = msg.role === "user" ? "var(--neon-cyan)" : "var(--neon-magenta)";
-        sender.innerText = msg.role === "user" ? "❯ YOU" : "❯ AETHER";
+        sender.innerText = msg.role === "user" ? "❯ YOU" : "❯ Krims Code";
 
         const meta = document.createElement("span");
         meta.innerText = msg.provider ? `${msg.provider} // ${msg.model || ""}` : "";

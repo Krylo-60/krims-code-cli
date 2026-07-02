@@ -1,54 +1,60 @@
-# Krims Code AI CLI
+# Krims Code CLI
 
-> âš¡ **Universal AI Gateway** â€” 13+ providers, free & paid models, cyberpunk terminal
+> ⚡ **Universal AI Gateway** — 13+ providers, free & paid models, cyberpunk terminal
 
 [![npm version](https://img.shields.io/npm/v/@krishivpb60/krims-code-cli.svg)](https://www.npmjs.com/package/@krishivpb60/krims-code-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-cyan.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-â‰¥18.0.0-green.svg)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/Node.js-≥18.0.0-green.svg)](https://nodejs.org)
 
 ```
-  â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
-  â•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—    â•‘
-  â•‘    â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â•šâ•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—   â•‘
-  â•‘    â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—     â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•   â•‘
-  â•‘    â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•     â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—   â•‘
-  â•‘    â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘   â•‘
-  â•‘    â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•   â•šâ•â•   â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•   â•‘
-  â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  ╔════════════════════════════════════════════════════════════════╗
+  ║  ██╗  ██╗██████╗ ██╗███╗   ███╗███████╗     ██████╗ ██████╗  ║
+  ║  ██║ ██╔╝██╔══██╗██║████╗ ████║██╔════╝    ██╔════╝██╔═══██╗ ║
+  ║  █████╔╝ ██████╔╝██║██╔████╔██║███████╗    ██║     ██║   ██║ ║
+  ║  ██╔═██╗ ██╔══██╗██║██║╚██╔╝██║╚════██║    ██║     ██║   ██║ ║
+  ║  ██║  ██╗██║  ██║██║██║ ╚═╝ ██║███████║    ╚██████╗╚██████╔╝ ║
+  ║  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝╚══════╝     ╚═════╝ ╚═════╝  ║
+  ║              ██████╗██╗     ██╗                                  ║
+  ║             ██╔════╝██║     ██║                                  ║
+  ║             ██║     ██║     ██║                                  ║
+  ║             ██║     ██║     ██║                                  ║
+  ║             ╚██████╗███████╗██║                                  ║
+  ║              ╚═════╝╚══════╝╚═╝                                  ║
+  ╚════════════════════════════════════════════════════════════════╝
 ```
 
-**Krims Code AI v110** is a production-ready, globally installable command-line AI assistant that connects to **any AI provider in the world** â€” both free and paid. Chat with GPT-4o, Claude, Gemini, Llama, Mixtral, DeepSeek, and 50+ more models, all from one terminal.
+**Krims Code CLI** is a production-ready, globally installable command-line AI assistant that connects to **any AI provider in the world** — both free and paid. Chat with GPT-4o, Claude, Gemini, Llama, Mixtral, DeepSeek, and 50+ more models, all from one terminal.
 
 ---
 
-## âœ¨ Features
+## ✨ Features
 
-- ðŸŒ **13+ AI Providers** â€” OpenAI, Anthropic, Google, Groq, Together, Mistral, OpenRouter, DeepSeek, Cerebras, Cohere, Perplexity, Fireworks, xAI
-- ðŸ†“ **Free Models Included** â€” Groq, Together AI, Cerebras, OpenRouter, and Cohere all offer generous free tiers
-- ðŸ’¬ **Interactive Chat** â€” Full terminal chat with slash commands, mode switching, and file attachments
-- âš¡ **Single-Shot Queries** â€” Quick one-off questions directly from the CLI
-- ðŸ§  **4 Reasoning Modes** â€” Synthesis, Research, Architect, Titan Fusion â€” each with unique system prompts
-- ðŸ“Ž **File Context Injection** â€” Attach code files, logs, or documents for context-aware AI responses
-- ðŸ¤– **Autopilot Debug Loop** â€” Automatically correct build/test failures using AI self-correcting feedback loop
-- ðŸŒ¿ **Interactive Git TUI** â€” Beautiful cyberpunk ASCII branch tree commit history & interactive file staging checkbox menu
-- ðŸ“Š **Web HUD Dashboard** â€” Companion local zero-dependency telemetry dashboard displaying real-time latencies & provider status
-- ðŸŽ¤ **Voice Microphone Input** â€” Record voice input directly from your terminal and transcribe it to text using Google Gemini or Whisper
-- ðŸ”„ **Failover Mesh** â€” Automatic failback across all configured providers
-- ðŸ”¢ **Local Math Solver** â€” Evaluates mathematical expressions without an API call
-- ðŸ¤– **Krylo Companion** â€” Offline cyberpunk companion bot when no API keys are configured
-- ðŸ” **Your Keys, Your Control** â€” API keys stored locally on YOUR machine, never transmitted anywhere
-- ðŸ“¤ **Export Conversations** â€” Save full chat history as Markdown files
-- ðŸŽ¨ **Cyberpunk UI** â€” Neon colors, ASCII art, signal bars, and mode badges
-- ðŸŽ­ **4 Color Themes** â€” Cyberpunk, Matrix, Synthwave, Crimson â€” switch with `/theme`
-- âŒ¨ï¸ **Custom Commands** â€” Create reusable prompt shortcuts with `/cmd add`
-- ðŸ“ **File Creation** â€” AI can create files on your system with path override prompts
-- ðŸ“Š **Live Telemetry** â€” Real-time response latency & tokens/sec in the status bar
-- ðŸŽ® **Mini-Game** â€” Built-in mainframe hacking game (`/game`)
-- ðŸ“‹ **Clipboard Copy** â€” Copy last response to clipboard with `/copy`
+- 🌐 **13+ AI Providers** — OpenAI, Anthropic, Google, Groq, Together, Mistral, OpenRouter, DeepSeek, Cerebras, Cohere, Perplexity, Fireworks, xAI
+- 🆓 **Free Models Included** — Groq, Together AI, Cerebras, OpenRouter, and Cohere all offer generous free tiers
+- 💬 **Interactive Chat** — Full terminal chat with slash commands, mode switching, and file attachments
+- ⚡ **Single-Shot Queries** — Quick one-off questions directly from the CLI
+- 🧠 **4 Reasoning Modes** — Synthesis, Research, Architect, Titan Fusion — each with unique system prompts
+- 📎 **File Context Injection** — Attach code files, logs, or documents for context-aware AI responses
+- 🤖 **Autopilot Debug Loop** — Automatically correct build/test failures using AI self-correcting feedback loop
+- 🌿 **Interactive Git TUI** — Beautiful cyberpunk ASCII branch tree commit history & interactive file staging checkbox menu
+- 📊 **Web HUD Dashboard** — Companion local zero-dependency telemetry dashboard displaying real-time latencies & provider status
+- 🎤 **Voice Microphone Input** — Record voice input directly from your terminal and transcribe it to text using Google Gemini or Whisper
+- 🔄 **Failover Mesh** — Automatic failback across all configured providers
+- 🔢 **Local Math Solver** — Evaluates mathematical expressions without an API call
+- 🤖 **Krylo Companion** — Offline cyberpunk companion bot when no API keys are configured
+- 🔐 **Your Keys, Your Control** — API keys stored locally on YOUR machine, never transmitted anywhere
+- 📤 **Export Conversations** — Save full chat history as Markdown files
+- 🎨 **Cyberpunk UI** — Neon colors, ASCII art, signal bars, and mode badges
+- 🎭 **4 Color Themes** — Cyberpunk, Matrix, Synthwave, Crimson — switch with `/theme`
+- ⌨️ **Custom Commands** — Create reusable prompt shortcuts with `/cmd add`
+- 📝 **File Creation** — AI can create files on your system with path override prompts
+- 📊 **Live Telemetry** — Real-time response latency & tokens/sec in the status bar
+- 🎮 **Mini-Game** — Built-in mainframe hacking game (`/game`)
+- 📋 **Clipboard Copy** — Copy last response to clipboard with `/copy`
 
 ---
 
-## ðŸš€ Quick Start
+## 🚀 Quick Start
 
 ### Install globally via npm
 
@@ -65,18 +71,18 @@ npx @krishivpb60/krims-code-cli chat
 ### Or install via pip (Python wrapper)
 
 ```bash
-pip install krims-code-agent-cli
+pip install krims-code-cli
 # Run via terminal:
-Krims Code-pip chat
+krims-pip chat
 ```
 
 ### Setup (Interactive Wizard)
 
 ```bash
-Krims Code setup
+krims-code setup
 ```
 
-The wizard walks you through configuring providers â€” **start with free ones!**
+The wizard walks you through configuring providers — **start with free ones!**
 
 ### Or set keys manually
 
@@ -94,47 +100,47 @@ krims-code config set ANTHROPIC_API_KEY sk-ant-your_key_here
 ### Start chatting
 
 ```bash
-Krims Code chat
+krims-code chat
 ```
 
 ### Quick one-shot query
 
 ```bash
-Krims Code ask "Explain quantum computing in simple terms"
+krims-code ask "Explain quantum computing in simple terms"
 ```
 
 ---
 
-## ðŸ“¦ Supported Providers
+## 📦 Supported Providers
 
 | Provider | Key | Free Tier | Default Model |
 |----------|-----|-----------|---------------|
-| **Groq** | `GROQ_API_KEY` | âœ… Generous | `llama-3.3-70b-versatile` |
-| **Together AI** | `TOGETHER_API_KEY` | âœ… Free credits | `Meta-Llama-3.1-70B-Instruct-Turbo` |
-| **Cerebras** | `CEREBRAS_API_KEY` | âœ… Free tier | `llama-3.3-70b` |
-| **OpenRouter** | `OPENROUTER_API_KEY` | âœ… Free models | `llama-3.1-70b-instruct:free` |
-| **Google Gemini** | `GOOGLE_API_KEY` | âœ… Free tier | `gemini-2.5-flash` |
-| **Cohere** | `COHERE_API_KEY` | âœ… Dev free | `command-r-plus` |
-| **Fireworks AI** | `FIREWORKS_API_KEY` | âœ… Free tier | `llama-v3p1-70b-instruct` |
-| **OpenAI** | `OPENAI_API_KEY` | ðŸ’³ Paid | `gpt-4o` |
-| **Anthropic** | `ANTHROPIC_API_KEY` | ðŸ’³ Paid | `claude-sonnet-4` |
-| **xAI** | `XAI_API_KEY` | ðŸ’³ Paid | `grok-2` |
-| **Mistral** | `MISTRAL_API_KEY` | ðŸ’³ Paid | `mistral-large-latest` |
-| **DeepSeek** | `DEEPSEEK_API_KEY` | ðŸ’³ Paid | `deepseek-chat` |
-| **Perplexity** | `PERPLEXITY_API_KEY` | ðŸ’³ Paid | `sonar` |
+| **Groq** | `GROQ_API_KEY` | ✅ Generous | `llama-3.3-70b-versatile` |
+| **Together AI** | `TOGETHER_API_KEY` | ✅ Free credits | `Meta-Llama-3.1-70B-Instruct-Turbo` |
+| **Cerebras** | `CEREBRAS_API_KEY` | ✅ Free tier | `llama-3.3-70b` |
+| **OpenRouter** | `OPENROUTER_API_KEY` | ✅ Free models | `llama-3.1-70b-instruct:free` |
+| **Google Gemini** | `GOOGLE_API_KEY` | ✅ Free tier | `gemini-2.5-flash` |
+| **Cohere** | `COHERE_API_KEY` | ✅ Dev free | `command-r-plus` |
+| **Fireworks AI** | `FIREWORKS_API_KEY` | ✅ Free tier | `llama-v3p1-70b-instruct` |
+| **OpenAI** | `OPENAI_API_KEY` | 💳 Paid | `gpt-4o` |
+| **Anthropic** | `ANTHROPIC_API_KEY` | 💳 Paid | `claude-sonnet-4` |
+| **xAI** | `XAI_API_KEY` | 💳 Paid | `grok-2` |
+| **Mistral** | `MISTRAL_API_KEY` | 💳 Paid | `mistral-large-latest` |
+| **DeepSeek** | `DEEPSEEK_API_KEY` | 💳 Paid | `deepseek-chat` |
+| **Perplexity** | `PERPLEXITY_API_KEY` | 💳 Paid | `sonar` |
 
-> ðŸ’¡ **Tip:** Start with **Groq** (fastest, free) or **Google Gemini** (most capable free tier). You can configure multiple providers and Krims Code will automatically failover between them!
+> 💡 **Tip:** Start with **Groq** (fastest, free) or **Google Gemini** (most capable free tier). You can configure multiple providers and Krims Code will automatically failover between them!
 
 ---
 
-## ðŸŽ® Commands
+## 🎮 Commands
 
 ### Core Commands
 
 ```bash
-Krims Code chat                    # Interactive chat session
-Krims Code ask "your question"     # Single-shot query
-Krims Code setup                   # Guided provider setup wizard
+krims-code chat                    # Interactive chat session
+krims-code ask "your question"     # Single-shot query
+krims-code setup                   # Guided provider setup wizard
 ```
 
 ### Configuration
@@ -151,27 +157,27 @@ krims-code config path                # Show config file location
 ### Discovery
 
 ```bash
-Krims Code providers               # List all 13+ supported providers
-Krims Code providers --free        # Show only free-tier providers
-Krims Code models                  # List all available models
-Krims Code models groq             # Models for a specific provider
-Krims Code modes                   # List reasoning modes
-Krims Code status                  # System status & active providers
+krims-code providers               # List all 13+ supported providers
+krims-code providers --free        # Show only free-tier providers
+krims-code models                  # List all available models
+krims-code models groq             # Models for a specific provider
+krims-code modes                   # List reasoning modes
+krims-code status                  # System status & active providers
 ```
 
 ### Flags
 
 ```bash
-Krims Code ask "prompt" --mode research     # Use specific reasoning mode
-Krims Code ask "prompt" --file error.log    # Attach file context
-Krims Code ask "prompt" --model gpt-4o      # Override model
-Krims Code ask "prompt" --raw               # Raw text output (for piping)
-Krims Code chat --mode architect            # Start chat in specific mode
+krims-code ask "prompt" --mode research     # Use specific reasoning mode
+krims-code ask "prompt" --file error.log    # Attach file context
+krims-code ask "prompt" --model gpt-4o      # Override model
+krims-code ask "prompt" --raw               # Raw text output (for piping)
+krims-code chat --mode architect            # Start chat in specific mode
 ```
 
 ---
 
-## ðŸ’¬ Chat Commands
+## 💬 Chat Commands
 
 Inside interactive chat mode, use these slash commands:
 
@@ -214,54 +220,54 @@ Inside interactive chat mode, use these slash commands:
 
 ---
 
-## ðŸ§  Reasoning Modes
+## 🧠 Reasoning Modes
 
 | Mode | Layer | Style | Signal |
 |------|-------|-------|--------|
-| **Synthesis** | v2.5 | Balanced, clean, direct | â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–‘â–‘ 80% |
-| **Research** | v104 | Deep analysis, evidence-based | â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–‘ 85% |
-| **Architect** | v55 | Systems thinking, debugging | â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–‘ 90% |
-| **Titan Fusion** | v110 | Premium, maximum signal density | â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–‘ 95% |
+| **Synthesis** | v2.5 | Balanced, clean, direct | ████████░░ 80% |
+| **Research** | v104 | Deep analysis, evidence-based | █████████░ 85% |
+| **Architect** | v55 | Systems thinking, debugging | █████████░ 90% |
+| **Titan Fusion** | v110 | Premium, maximum signal density | █████████░ 95% |
 
 ---
 
-## ðŸ” Security
+## 🔐 Security
 
-- **Your keys stay on YOUR machine** â€” stored at `~/.krims-code/config.json`
+- **Your keys stay on YOUR machine** — stored at `~/.krims-code/config.json`
 - **No keys are bundled** in the package
-- **No telemetry** â€” zero data collection
+- **No telemetry** — zero data collection
 - **Keys are masked** when displayed (`krims-code config list`)
 - **Environment variables** also supported as fallback
 
 ---
 
-## ðŸ”„ Failover Mesh
+## 🔄 Failover Mesh
 
 Krims Code routes your prompt through all configured providers automatically:
 
 ```
 Your Prompt
-    â†“
-[Provider 1] â†’ Success? â†’ Response âœ“
-    â†“ (fail)
-[Provider 2] â†’ Success? â†’ Response âœ“
-    â†“ (fail)
-[Provider N] â†’ Success? â†’ Response âœ“
-    â†“ (all fail)
-[Krylo Companion] â†’ Local Response âœ“
+    ↓
+[Provider 1] → Success? → Response ✓
+    ↓ (fail)
+[Provider 2] → Success? → Response ✓
+    ↓ (fail)
+[Provider N] → Success? → Response ✓
+    ↓ (all fail)
+[Krylo Companion] → Local Response ✓
 ```
 
 If a provider returns an error (rate limit, quota, etc.), Krims Code automatically tries the next one. Configure multiple free providers for maximum resilience!
 
 ---
 
-## ðŸ“ File Attachment
+## 📁 File Attachment
 
 Attach code files, logs, configs, or documents for context-aware responses:
 
 ```bash
 # From CLI
-Krims Code ask "What's wrong with this code?" --file buggy.js
+krims-code ask "What's wrong with this code?" --file buggy.js
 
 # In chat mode
 /attach error.log
@@ -272,7 +278,7 @@ What errors are in this file?
 
 ---
 
-## ðŸ—ï¸ Development
+## 🏗️ Development
 
 ```bash
 # Clone the repo
@@ -286,28 +292,28 @@ npm install
 npm link
 
 # Test
-Krims Code --help
-Krims Code status
-Krims Code ask "hello"
+krims-code --help
+krims-code status
+krims-code ask "hello"
 ```
 
 ---
 
-## ðŸ“„ License
+## 📄 License
 
-MIT License â€” see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## ðŸ‘¨â€ðŸ’» Author
+## 👨‍💻 Author
 
 **Krishiv PB** ([@Krylo-60](https://github.com/Krylo-60))
 
-> *"Stay cyberpunk. âš¡"*
+> *"Stay cyberpunk. ⚡"*
 
 ---
 
 <p align="center">
-  <b>âš¡ Krims Code AI v110 â€” Fusion Command Station âš¡</b><br>
+  <b>⚡ Krims Code CLI — Fusion Command Station ⚡</b><br>
   <i>Universal AI Gateway for the Terminal</i>
 </p>

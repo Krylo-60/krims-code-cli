@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════
 // Krims Code AI CLI — Interactive Chat Loop
 // Universal AI Gateway & Cyberpunk Command Center
 // ═══════════════════════════════════════════════════════════
@@ -68,7 +68,7 @@ const getMarked = () => new Marked(markedTerminal({
 }));
 
 /**
- * Starts the interactive KRIMS CODE chat session.
+ * Starts the interactive krims-code chat session.
  * @param {{ mode?: string, preferredProvider?: string }} [options={}]
  */
 export async function startChat(options = {}) {
@@ -112,7 +112,7 @@ export async function startChat(options = {}) {
     console.log(
       "\n" + label.system + " " +
       colors.warning("No API keys configured. Using local fallback solvers.") + "\n" +
-      "  " + colors.muted("Run ") + colors.accent("KRIMS CODE setup") +
+      "  " + colors.muted("Run ") + colors.accent("krims-code setup") +
       colors.muted(" to configure providers (free options available!).\n")
     );
   } else {
@@ -273,7 +273,7 @@ export async function startChat(options = {}) {
         let firstTokenTime = 0;
 
         if (loopCount > 0) {
-          console.log(colors.accent(`\n🤖 [KRIMS CODE Autopilot Mode - Iteration ${loopCount + 1}/${MAX_LOOPS}]`));
+          console.log(colors.accent(`\n🤖 [Krims Code Autopilot Mode - Iteration ${loopCount + 1}/${MAX_LOOPS}]`));
         }
 
         const spinner = createSpinner(
@@ -307,7 +307,7 @@ export async function startChat(options = {}) {
 
         // Display response
         console.log("");
-        console.log(label.KRIMS CODE + " " + providerBadge(result));
+        console.log(label.krims + " " + providerBadge(result));
         console.log(separator("─"));
         console.log("");
 
@@ -679,7 +679,7 @@ async function handleCommand(input, ctx) {
 
 function showHelp(aiConfig) {
   console.log("");
-  console.log(colors.brand("  ⚡ Krims Code CLI COMMANDS"));
+  console.log(colors.brand("  ⚡ KRIMS CODE CLI COMMANDS"));
   console.log(separator("─"));
   console.log("");
   console.log(keyValue("/", "Show this help menu"));
@@ -886,7 +886,7 @@ async function handleExport(history) {
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const filename = `KRIMS CODE-chat-${timestamp}.md`;
+  const filename = `krims-chat-${timestamp}.md`;
   const filepath = resolve(filename);
 
   let content = `# Krims Code AI Chat Export\n*Exported at ${new Date().toLocaleString()}*\n\n---\n\n`;
@@ -895,7 +895,7 @@ async function handleExport(history) {
     if (entry.role === "user") {
       content += `## 👤 You\n${entry.content}\n\n`;
     } else {
-      content += `## 🤖 KRIMS CODE (${entry.provider || "unknown"})\n${entry.content}\n\n---\n\n`;
+      content += `## 🤖 Krims Code (${entry.provider || "unknown"})\n${entry.content}\n\n---\n\n`;
     }
   }
 
@@ -930,7 +930,7 @@ function showActiveProviders(aiConfig) {
   console.log(separator("─"));
 
   if (active.length === 0) {
-    console.log("  " + colors.warning("No providers. Run `KRIMS CODE setup` to configure.") + "\n");
+    console.log("  " + colors.warning("No providers. Run `krims-code setup` to configure.") + "\n");
     return;
   }
 
@@ -1427,7 +1427,7 @@ async function handleCommitInsideChat_unused(ctx) {
     const onToken = (token) => {
       if (firstToken) {
         firstToken = false;
-        process.stdout.write(label.KRIMS CODE + " Suggested Commit Message: " + colors.success(token));
+        process.stdout.write(label.krims + " Suggested Commit Message: " + colors.success(token));
       } else {
         process.stdout.write(colors.success(token));
       }
@@ -1553,7 +1553,7 @@ async function executeAISpecialCommand(prompt, specialLabel, ctx) {
     if (!hasStarted) {
       hasStarted = true;
       firstTokenTime = Date.now();
-      process.stdout.write("\n" + label.KRIMS CODE + " " + colors.accent(specialLabel) + "\n" + separator("─") + "\n\n");
+      process.stdout.write("\n" + label.krims + " " + colors.accent(specialLabel) + "\n" + separator("─") + "\n\n");
     }
     process.stdout.write(colors.success(token));
     responseText += token;
@@ -1824,7 +1824,7 @@ If you hit an unrecoverable roadblock and cannot achieve the goal, output [GOAL_
 `;
 
   const goalSystemPrompt = `
-You are KRIMS CODE Autopilot in Autonomous Goal Solver Mode.
+You are Krims Code Autopilot in Autonomous Goal Solver Mode.
 The user has set the following goal: "${goal}"
 
 Your task is to take any actions necessary to achieve this goal. You have full access to workspace tools:
@@ -1846,7 +1846,7 @@ Rules:
   while (iteration <= maxIterations) {
     console.log(colors.accent(`\n🤖 [Autopilot Goal Solver - Iteration ${iteration}/${maxIterations}]`));
 
-    const spinner = createSpinner(colors.muted(`KRIMS CODE planning & executing next steps...`));
+    const spinner = createSpinner(colors.muted(`Krims Code planning & executing next steps...`));
     spinner.start();
 
     let streamedText = "";
@@ -1877,7 +1877,7 @@ Rules:
     }
 
     console.log("");
-    console.log(label.KRIMS CODE + " " + providerBadge(result));
+    console.log(label.krims + " " + providerBadge(result));
     console.log(separator("─"));
     console.log("");
 
@@ -2008,7 +2008,7 @@ After you output your edits or read operations, we will apply them and re-run th
 `;
 
   const debugSystemPrompt = `
-You are KRIMS CODE Autopilot in Autonomous Debug Mode.
+You are Krims Code Autopilot in Autonomous Debug Mode.
 A terminal command failed. Your goal is to analyze the error logs, read relevant source files to find the bug, write fixes to those files, and make sure the diagnostics pass.
 You can read files using: [READ_FILE: path/to/file]
 You can write files using:
@@ -2027,7 +2027,7 @@ Rules:
   while (iteration <= maxIterations) {
     console.log(colors.accent(`\n🤖 [Autopilot Debug - Iteration ${iteration}/${maxIterations}]`));
 
-    const spinner = createSpinner(colors.muted(`KRIMS CODE analyzing diagnostics & planning fixes...`));
+    const spinner = createSpinner(colors.muted(`Krims Code analyzing diagnostics & planning fixes...`));
     spinner.start();
 
     let streamedText = "";
@@ -2058,7 +2058,7 @@ Rules:
     }
 
     console.log("");
-    console.log(label.KRIMS CODE + " " + providerBadge(result));
+    console.log(label.krims + " " + providerBadge(result));
     console.log(separator("─"));
     console.log("");
 
@@ -2442,7 +2442,7 @@ export async function handleMicInput(ctx) {
     return;
   }
 
-  const wavPath = join(tmpdir(), `KRIMS CODE_mic_${Date.now()}.wav`);
+  const wavPath = join(tmpdir(), `krims_mic_${Date.now()}.wav`);
   let handle;
 
   try {

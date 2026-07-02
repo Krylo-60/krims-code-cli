@@ -10,7 +10,7 @@ import { getSessionTokenStats, getBreakdownByModel } from "./tokens.js";
 import { getActiveProviders, PROVIDERS } from "./providers.js";
 import { listSessions } from "../config.js";
 
-const CONFIG_DIR = join(homedir(), ".KRIMS CODE");
+const CONFIG_DIR = join(homedir(), ".krims-code");
 const TELEMETRY_FILE = join(CONFIG_DIR, "telemetry.json");
 
 /**
@@ -98,7 +98,7 @@ export function clearTelemetryLogs() {
 
 /**
  * Gathers all metrics needed for the web dashboard visualization.
- * @param {object} config - KRIMS CODE configuration object
+ * @param {object} config - krims-code configuration object
  * @returns {object}
  */
 export function getTelemetryData(config = {}) {

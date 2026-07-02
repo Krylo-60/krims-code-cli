@@ -44,7 +44,7 @@ export async function showReleaseHighlights(version) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-    const res = await fetch("https://raw.githubusercontent.com/Krylo-60/KRIMS CODE-ai-cli/main/HIGHLIGHTS.md", {
+    const res = await fetch("https://raw.githubusercontent.com/Krylo-60/krims-code-cli/main/HIGHLIGHTS.md", {
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -131,7 +131,7 @@ export async function checkForUpdates(force = false) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-    const res = await fetch("https://registry.npmjs.org/@krishivpb60/KRIMS CODE-ai-cli/latest", {
+    const res = await fetch("https://registry.npmjs.org/@krishivpb60/krims-code-cli/latest", {
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -149,10 +149,10 @@ export async function checkForUpdates(force = false) {
       if (autoUpdate || force) {
         console.log("\n" + label.system + " " + colors.brand(`⚡ New version detected! Auto-updating from v${currentVersion} to v${latestVersion}...`));
 
-        const isPip = process.env.KRIMS CODE_PACKAGER === "pip";
+        const isPip = process.env.krims-code_PACKAGER === "pip";
         const updateCmd = isPip
-          ? "pip install --upgrade KRIMS CODE-ai-agent-cli"
-          : "npm install -g @krishivpb60/KRIMS CODE-ai-cli";
+          ? "pip install --upgrade krims-code-agent-cli"
+          : "npm install -g @krishivpb60/krims-code-cli";
 
         try {
           const spinner = createSpinner("Installing update").start();
@@ -171,15 +171,15 @@ export async function checkForUpdates(force = false) {
         }
       } else {
         console.log("\n" + label.system + " " + colors.warning(`⚡ A new version (v${latestVersion}) is available!`));
-        const isPip = process.env.KRIMS CODE_PACKAGER === "pip";
+        const isPip = process.env.krims-code_PACKAGER === "pip";
         const updateCmd = isPip
-          ? "pip install -U KRIMS CODE-ai-agent-cli"
-          : "npm install -g @krishivpb60/KRIMS CODE-ai-cli";
+          ? "pip install -U krims-code-agent-cli"
+          : "npm install -g @krishivpb60/krims-code-cli";
         console.log(label.system + " " + colors.muted(`To update, run: ${updateCmd}`));
       }
     } else {
       if (force) {
-        console.log(label.system + " " + colors.success(`✓ KRIMS CODE is already up to date (v${currentVersion}).`));
+        console.log(label.system + " " + colors.success(`✓ Krims Code is already up to date (v${currentVersion}).`));
       }
       // Already on latest version, check if we need to show highlights
       const lastNotified = await getConfigValue("LAST_NOTIFIED_VERSION") || "";

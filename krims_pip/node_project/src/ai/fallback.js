@@ -156,7 +156,7 @@ export function generateOfflineReply(prompt, errors = []) {
         "Hello! I am Krylo, your offline companion for Krims Code CLI.",
         "I can help you with local math calculations (e.g. 2 + 2), status checks, or run simple hacking games.",
         "To converse with an advanced LLM, please configure an API key using:",
-        "  KRIMS CODE config set GOOGLE_API_KEY <your_key_here>"
+        "  krims-code config set GOOGLE_API_KEY <your_key_here>"
       ].join("\n"),
       type: "krylo-local"
     };
@@ -214,12 +214,12 @@ export function generateOfflineReply(prompt, errors = []) {
         "import fs from 'node:fs/promises';",
         "",
         "async function main() {",
-        "  console.log('KRIMS CODE offline node initialized.');",
+        "  console.log('Krims Code offline node initialized.');",
         "}",
         "main();",
         "```",
         "",
-        "Configure an API key to have KRIMS CODE write, refactor, or debug code on your behalf!"
+        "Configure an API key to have Krims Code write, refactor, or debug code on your behalf!"
       ].join("\n"),
       type: "krylo-local"
     };
@@ -231,7 +231,7 @@ export function generateOfflineReply(prompt, errors = []) {
       warning,
       "",
       "No active API keys configured. Please set GOOGLE_API_KEY, GROQ_API_KEY, or OPENAI_API_KEY in your config to start chatting.",
-      "Example: KRIMS CODE config set GOOGLE_API_KEY <your-key>"
+      "Example: krims-code config set GOOGLE_API_KEY <your-key>"
     ].join("\n"),
     type: "offline-error"
   };

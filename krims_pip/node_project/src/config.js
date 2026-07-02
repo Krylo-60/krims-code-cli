@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════
 // Krims Code AI CLI — Secure Configuration Management
-// Stores user API keys locally at ~/.KRIMS CODE/config.json
+// Stores user API keys locally at ~/.krims-code/config.json
 // Supports ALL AI providers (13+ and growing)
 // ═══════════════════════════════════════════════════════════
 
@@ -18,7 +18,11 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { getAllConfigKeys } from "./ai/providers.js";
 
-const CONFIG_DIR = join(homedir(), ".KRIMS CODE");
+const CONFIG_DIR = existsSync(join(homedir(), ".krims"))
+  ? join(homedir(), ".krims")
+  : (existsSync(join(homedir(), ".krims-code"))
+    ? join(homedir(), ".krims-code")
+    : join(homedir(), ".krims"));
 const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 
 const SENSITIVE_PATTERNS = ["KEY", "TOKEN", "SECRET"];

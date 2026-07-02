@@ -10,6 +10,7 @@ import chalk from "chalk";
 import { colors, separator, modeBadge, getIcon } from "./theme.js";
 import { getActiveProviders } from "../ai/providers.js";
 import { MODES } from "../modes.js";
+import { getConfigPath } from "../config.js";
 
 // ANSI escape code strip regex
 const ANSI_REGEX = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
@@ -20,7 +21,7 @@ function getVisibleLength(str) {
 
 function loadConfigSync() {
   try {
-    const configPath = join(homedir(), ".KRIMS CODE", "config.json");
+    const configPath = getConfigPath();
     if (existsSync(configPath)) {
       const raw = readFileSync(configPath, "utf-8");
       return JSON.parse(raw);
@@ -32,7 +33,7 @@ function loadConfigSync() {
 }
 
 /**
- * Displays the cyberpunk-styled KRIMS CODE ASCII art banner and OpenCode-style system info.
+ * Displays the cyberpunk-styled Krims Code ASCII art banner and OpenCode-style system info.
  * @param {string} [currentMode='titan'] - The currently active mode name
  */
 export function showBanner(currentMode = "titan") {
@@ -45,12 +46,12 @@ export function showBanner(currentMode = "titan") {
   const logo = [
     "",
     c1("  ╔═══════════════════════════════════════════════════════════╗"),
-    c1("  ║") + c2("     █████╗ ███████╗████████╗██╗  ██╗███████╗██████╗    ") + c1("║"),
-    c1("  ║") + c2("    ██╔══██╗██╔════╝╚══██╔══╝██║  ██║██╔════╝██╔══██╗   ") + c1("║"),
-    c1("  ║") + c1("    ███████║█████╗     ██║   ████████║█████╗  ██████╔╝   ") + c1("║"),
-    c1("  ║") + c3("    ██╔══██║██╔══╝     ██║   ██╔══██║██╔══╝  ██╔══██╗   ") + c1("║"),
-    c1("  ║") + c3("    ██║  ██║███████╗   ██║   ██║  ██║███████╗██║  ██║   ") + c1("║"),
-    c1("  ║") + dim("    ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ") + c1("║"),
+    c1("  ║") + c2("     ██╗  ██╗██████╗ ██╗███╗   ███╗███████╗             ") + c1("║"),
+    c1("  ║") + c2("     ██║ ██╔╝██╔══██╗██║████╗ ████║██╔════╝             ") + c1("║"),
+    c1("  ║") + c1("     █████╔╝ ██████╔╝██║██╔████╔██║███████╗             ") + c1("║"),
+    c1("  ║") + c3("     ██╔═██╗ ██╔══██╗██║██║╚██╔╝██║╚════██║             ") + c1("║"),
+    c1("  ║") + c3("     ██║  ██╗██║  ██║██║██║ ╚═╝ ██║███████║             ") + c1("║"),
+    c1("  ║") + dim("     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝╚══════╝             ") + c1("║"),
     c1("  ╚═══════════════════════════════════════════════════════════╝"),
   ].join("\n");
 
@@ -132,9 +133,9 @@ export function showBanner(currentMode = "titan") {
     return `${label}${spaces}${value}`;
   }
 
-  const packagerText = process.env.KRIMS CODE_PACKAGER === "pip"
-    ? "pip (KRIMS CODE-ai-agent-cli)"
-    : "npm (@krishivpb60/KRIMS CODE-ai-cli)";
+  const packagerText = process.env.KRIMS_PACKAGER === "pip"
+    ? "pip (krims-code-cli)"
+    : "npm (@krishivpb60/krims-code-cli)";
 
   const rows = [
     formatRow(` ${colors.muted(getIcon("workspace", config) + "Workspace")}`, colors.text(workspaceValue)),

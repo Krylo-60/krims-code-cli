@@ -5,7 +5,7 @@
 import ora from "ora";
 
 /**
- * Creates a styled spinner with the KRIMS CODE theme.
+ * Creates a styled spinner with the Krims Code theme.
  * @param {string} text - Spinner label text
  * @returns {object} An ora spinner instance
  */

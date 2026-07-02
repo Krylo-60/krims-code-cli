@@ -21,7 +21,7 @@ export default {
     const active = getActiveProviders(aiConfig);
 
     console.log("");
-    console.log(colors.brand("  ⚡ KRIMS CODE SYSTEM STATUS"));
+    console.log(colors.brand("  ⚡ Krims Code SYSTEM STATUS"));
     console.log(separator("─"));
     console.log(keyValue("  Version", `v${VERSION}`));
     console.log(keyValue("  Config", exists ? colors.success("✓ Found") : colors.warning("✗ Not found")));
@@ -30,7 +30,7 @@ export default {
     console.log("");
     console.log(colors.accent("  ◈ Active Providers:"));
     if (active.length === 0) {
-      console.log("  " + colors.warning("  No providers configured. Run `KRIMS CODE setup` to get started."));
+      console.log("  " + colors.warning("  No providers configured. Run `Krims Code setup` to get started."));
     } else {
       for (const { id, provider } of active) {
         console.log("  " + colors.success("  ✓ ") + colors.text(provider.name) + colors.dim(` (${provider.defaultModel})`));

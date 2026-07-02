@@ -1,4 +1,4 @@
-import { getGitDiff, runGitCommit } from "../git.js";
+﻿import { getGitDiff, runGitCommit } from "../git.js";
 import { getAIConfig } from "../config.js";
 import { routePrompt } from "../ai/router.js";
 import { MODES, DEFAULT_MODE } from "../modes.js";
@@ -54,7 +54,7 @@ export default {
       const onToken = (token) => {
         if (firstToken) {
           firstToken = false;
-          process.stdout.write(label.KRIMS CODE + " Suggested Commit Message: " + colors.success(token));
+          process.stdout.write(label.krims + " Suggested Commit Message: " + colors.success(token));
         } else {
           process.stdout.write(colors.success(token));
         }
@@ -123,7 +123,7 @@ export default {
       const onToken = (token) => {
         if (firstToken) {
           firstToken = false;
-          process.stdout.write(label.KRIMS CODE + " Suggested Commit Message: " + colors.success(token));
+          process.stdout.write(label.krims + " Suggested Commit Message: " + colors.success(token));
         } else {
           process.stdout.write(colors.success(token));
         }

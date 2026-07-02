@@ -119,7 +119,7 @@ function formatBytes(bytes) {
 
 const EXCLUDE_DIRS = new Set([
   "node_modules", ".git", ".agents", "build", "dist", ".github",
-  "KRIMS CODE_pip", "KRIMS CODE_ai_agent_cli.egg-info", "KRIMS CODE_ai_cli.egg-info"
+  "Krims Code_pip", "krims_code_agent_cli.egg-info", "krims_code_cli.egg-info"
 ]);
 
 /**

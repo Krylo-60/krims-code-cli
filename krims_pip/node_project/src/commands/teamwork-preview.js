@@ -239,7 +239,7 @@ export default {
       const runTick = () => {
         process.stdout.write("\x1b[2J\x1b[3J\x1b[H");
         console.log("");
-        console.log(colors.brand("  ⚡ KRIMS CODE TEAMWORK DASHBOARD [WATCH MODE]"));
+        console.log(colors.brand("  ⚡ Krims Code TEAMWORK DASHBOARD [WATCH MODE]"));
         console.log(separator("─"));
         console.log("");
         
@@ -261,7 +261,7 @@ export default {
       runTick();
     } else {
       console.log("");
-      console.log(colors.brand("  ⚡ KRIMS CODE TEAMWORK DASHBOARD"));
+      console.log(colors.brand("  ⚡ Krims Code TEAMWORK DASHBOARD"));
       console.log(separator("─"));
       console.log("");
 
@@ -288,7 +288,7 @@ export default {
       const runTick = () => {
         process.stdout.write("\x1b[2J\x1b[3J\x1b[H");
         console.log("");
-        console.log(colors.brand("  ⚡ KRIMS CODE TEAMWORK DASHBOARD [WATCH MODE]"));
+        console.log(colors.brand("  ⚡ Krims Code TEAMWORK DASHBOARD [WATCH MODE]"));
         console.log(separator("─"));
         console.log("");
 
@@ -310,7 +310,7 @@ export default {
       runTick();
     } else {
       console.log("");
-      console.log(colors.brand("  ⚡ KRIMS CODE TEAMWORK DASHBOARD"));
+      console.log(colors.brand("  ⚡ Krims Code TEAMWORK DASHBOARD"));
       console.log(separator("─"));
       console.log("");
 
