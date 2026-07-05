@@ -1,4 +1,4 @@
-﻿// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
 // Krims Code AI CLI — Main CLI Logic & Command Routing
 // Universal AI Gateway — Supports 13+ providers
 // ═══════════════════════════════════════════════════════════
@@ -67,7 +67,7 @@ export async function createCLI(argv) {
 
   program
     .name("krims-code")
-    .description("Krims Code AI — Universal AI Gateway CLI\n  Supports 13+ AI providers • Free & paid models • Local fallbacks")
+    .description("Aether AI — Universal AI Gateway CLI\n  Supports 13+ AI providers • Free & paid models • Local fallbacks")
     .version(VERSION, "-v, --version");
 
   // ── Chat Command ────────────────────────────────────────
