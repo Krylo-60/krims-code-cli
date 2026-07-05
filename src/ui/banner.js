@@ -37,27 +37,16 @@ function loadConfigSync() {
  * @param {string} [currentMode='titan'] - The currently active mode name
  */
 export function showBanner(currentMode = "titan") {
-  const c1 = colors.accent;
-  const c2 = colors.accent2;
-  const c3 = colors.accent3;
+  const c1 = chalk.hex('#FF3E3E'); // Red-Orange
+  const c2 = chalk.hex('#FF8500'); // Orange
+  const c3 = chalk.hex('#FFD000'); // Yellow
+  const c4 = chalk.hex('#00F2FF'); // Cyan
+  const c5 = chalk.hex('#0085FF'); // Blue
+  const c6 = chalk.hex('#7000FF'); // Violet
+  const c7 = chalk.hex('#B000FF'); // Purple
   const dim = colors.dim;
 
-  // 1. ASCII Art Logo
-  const logo = [
-    "",
-    c1("  ╔═══════════════════════════════════════════════════════════╗"),
-    c1("  ║") + c2("     ██╗  ██╗██████╗ ██╗███╗   ███╗███████╗             ") + c1("║"),
-    c1("  ║") + c2("     ██║ ██╔╝██╔══██╗██║████╗ ████║██╔════╝             ") + c1("║"),
-    c1("  ║") + c1("     █████╔╝ ██████╔╝██║██╔████╔██║███████╗             ") + c1("║"),
-    c1("  ║") + c3("     ██╔═██╗ ██╔══██╗██║██║╚██╔╝██║╚════██║             ") + c1("║"),
-    c1("  ║") + c3("     ██║  ██╗██║  ██║██║██║ ╚═╝ ██║███████║             ") + c1("║"),
-    c1("  ║") + dim("     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝╚══════╝             ") + c1("║"),
-    c1("  ╚═══════════════════════════════════════════════════════════╝"),
-  ].join("\n");
-
-  console.log(logo);
-
-  // 2. Fetch User & System Context
+  // 1. Fetch User & System Context
   let username = "Explorer";
   try {
     username = os.userInfo().username;
@@ -103,12 +92,12 @@ export function showBanner(currentMode = "titan") {
     // Fallback
   }
 
-  // 3. Render System Status Box
+  // 2. Render side-by-side logo and system info
   const columns = process.stdout.columns || 80;
   const boxWidth = Math.max(76, Math.min(90, columns - 4));
-  const maxValueWidth = boxWidth - 20;
+  const maxValueWidth = boxWidth - 30;
 
-  // Truncate values to fit the box cleanly
+  // Truncate values to fit the screen cleanly
   let workspaceValue = displayCwd;
   if (workspaceValue.length > maxValueWidth) {
     workspaceValue = "..." + workspaceValue.slice(-(maxValueWidth - 3));
@@ -119,45 +108,43 @@ export function showBanner(currentMode = "titan") {
     engineValue = engineValue.slice(0, maxValueWidth - 3) + "...";
   }
 
-  // Truncate description to ensure total mode value (badge + sep + desc) fits within maxValueWidth
   const modeBadgeText = getVisibleLength(modeText);
-  const maxDescWidth = maxValueWidth - modeBadgeText - 3; // 3 for " — "
+  const maxDescWidth = maxValueWidth - modeBadgeText - 3;
   let descValue = desc;
   if (descValue.length > maxDescWidth) {
     descValue = descValue.slice(0, Math.max(10, maxDescWidth - 3)) + "...";
   }
   const modeRowValue = `${modeText} ${colors.dim(`— ${descValue}`)}`;
 
-  function formatRow(label, value) {
-    const spaces = " ".repeat(Math.max(0, 14 - getVisibleLength(label)));
-    return `${label}${spaces}${value}`;
-  }
-
   const packagerText = process.env.KRIMS_PACKAGER === "pip"
     ? "pip (krims-code-cli)"
     : "npm (@krishivpb60/krims-code-cli)";
 
-  const rows = [
-    formatRow(` ${colors.muted(getIcon("workspace", config) + "Workspace")}`, colors.text(workspaceValue)),
-    formatRow(` ${colors.muted(getIcon("mode", config) + "Mode")}`, modeRowValue),
-    formatRow(` ${colors.muted(getIcon("network", config) + "Network")}`, meshStatusText),
-    formatRow(` ${colors.muted(getIcon("engine", config) + "Engine")}`, colors.text(engineValue)),
-    formatRow(` ${colors.muted(getIcon("package", config) + "Packager")}`, colors.text(packagerText)),
+  const logo = [
+    c1("  █▄     ▄█"),
+    c2("  ██    ██ "),
+    c3("  ██ ▄█    "),
+    c4("  ███▀     "),
+    c5("  ██ ▀█    "),
+    c6("  ██    ██ "),
+    c7("  █▀     ▀█")
   ];
 
-  console.log(`\n  ⚡ ${colors.brand("KRIMS CODE COMMAND STATION v" + version)} • Welcome back, ${colors.accent(username)}`);
+  const info = [
+    `   ⚡ ${colors.brand("KRIMS CODE COMMAND STATION v" + version)} • Welcome back, ${colors.accent(username)}`,
+    dim(`   ${"─".repeat(Math.max(40, boxWidth - 18))}`),
+    `     ${colors.muted(getIcon("workspace", config) + "Workspace")} : ${colors.text(workspaceValue)}`,
+    `     ${colors.muted(getIcon("mode", config) + "Mode")}      : ${modeRowValue}`,
+    `     ${colors.muted(getIcon("network", config) + "Network")}   : ${meshStatusText}`,
+    `     ${colors.muted(getIcon("engine", config) + "Engine")}    : ${colors.text(engineValue)}`,
+    `     ${colors.muted(getIcon("package", config) + "Packager")}  : ${colors.text(packagerText)}`
+  ];
 
-  // Draw Box
-  const leftLine = "═".repeat(2);
-  const rightLine = "═".repeat(boxWidth - 21);
-  const top = dim(`  ╔${leftLine} `) + colors.brand("SYSTEM STATE") + dim(` ${rightLine}╗`);
-  console.log(top);
-  for (const row of rows) {
-    const visibleLen = getVisibleLength(row);
-    const padding = " ".repeat(Math.max(0, boxWidth - visibleLen - 2));
-    console.log(dim("  ║ ") + row + padding + dim(" ║"));
+  console.log("");
+  for (let i = 0; i < 7; i++) {
+    console.log(logo[i] + info[i]);
   }
-  console.log(dim(`  ╚${"═".repeat(boxWidth - 2)}╝`));
+  console.log("");
 
   // 4. Quick Starter Cards (two columns)
   const starters = [

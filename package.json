@@ -1,6 +1,6 @@
 {
   "name": "@krishivpb60/krims-code-cli",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "Krims Code AI — A cyberpunk command-line AI assistant with multi-mode reasoning, 12-node failover mesh, file context injection, and offline fallbacks.",
   "main": "src/cli.js",
   "bin": {
