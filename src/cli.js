@@ -67,7 +67,7 @@ export async function createCLI(argv) {
 
   program
     .name("krims-code")
-    .description("Aether AI — Universal AI Gateway CLI\n  Supports 13+ AI providers • Free & paid models • Local fallbacks")
+    .description("Krims Code AI — Universal AI Gateway CLI\n  Supports 13+ AI providers • Free & paid models • Local fallbacks")
     .version(VERSION, "-v, --version");
 
   // ── Chat Command ────────────────────────────────────────
