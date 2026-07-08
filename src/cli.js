@@ -63,6 +63,14 @@ const VERSION = pkg.version;
  * @param {string[]} argv - Process arguments
  */
 export async function createCLI(argv) {
+  // Deprecation / EOL Warning Message
+  console.log("");
+  console.log(chalk.red.bold("  ⚠  DEPRECATION NOTICE: AETHER AI CLI HAS REACHED END OF DEVELOPMENT  ⚠"));
+  console.log(chalk.yellow("  This command-line assistant has transitioned to the unified Krims Code ecosystem."));
+  console.log(chalk.cyan("  For new features, updates, bug fixes, and Discord bots, please migrate to:"));
+  console.log(chalk.green.bold("  → npm install -g @krishivpb60/krims-code-cli"));
+  console.log("");
+
   const program = new Command();
 
   program
