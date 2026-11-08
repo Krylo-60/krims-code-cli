@@ -3,7 +3,7 @@ import os
 
 setup(
     name="krims-code-cli",
-    version="1.5.7",
+    version="1.5.8",
     author="Krishiv PB",
     author_email="krylobloxyt@gmail.com",
     description="Krims Code AI — Universal AI Gateway CLI (Native Python Edition)",
@@ -17,6 +17,7 @@ setup(
     entry_points={
         "console_scripts": [
             "krims-pip=krims_pip.cli:main",
+            "krims-code=krims_pip.cli:main",
         ],
     },
     classifiers=[

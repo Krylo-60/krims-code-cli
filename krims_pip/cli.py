@@ -2,7 +2,22 @@ import sys
 import os
 import json
 import getpass
+import urllib.request
+import urllib.error
 from krims_code_sdk import KrimsClient, PROVIDERS
+
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+if hasattr(sys.stderr, 'reconfigure'):
+    try:
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
+API_BASE = "https://krims-discord-bot-d57m.onrender.com"
 
 # ANSI color helper matching chalk
 class Colors:
@@ -26,6 +41,10 @@ class Colors:
 # Config Path Resolver
 def get_config_path():
     home = os.path.expanduser("~")
+    # Check ~/.krims/config.json first for parity with Node CLI
+    node_config = os.path.join(home, ".krims", "config.json")
+    if os.path.exists(node_config):
+        return node_config
     return os.path.join(home, ".aether", "config.json")
 
 def load_config():
@@ -43,6 +62,147 @@ def save_config(config):
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
+
+def handle_discord(args, config):
+    action = args[0].lower() if len(args) > 0 else "status"
+    subarg = args[1] if len(args) > 1 else ""
+
+    if action in ["link", "connect"]:
+        target_id = subarg or (args[0] if len(args) == 1 and args[0].isdigit() else "")
+        if not target_id:
+            print(f"\n{Colors.YELLOW}Usage: krims-pip discord connect <your_discord_id>{Colors.RESET}")
+            print(f"{Colors.DIM}Enable Developer Mode in Discord, right-click your profile, and select 'Copy User ID'.{Colors.RESET}\n")
+            return
+
+        print(f"\n{Colors.CYAN}Connecting Discord identity [{target_id}] to Krims Fleet...{Colors.RESET}")
+        try:
+            req_data = json.dumps({"discordId": target_id, "username": getpass.getuser()}).encode("utf-8")
+            req = urllib.request.Request(
+                f"{API_BASE}/api/cli/connect",
+                data=req_data,
+                headers={"Content-Type": "application/json", "User-Agent": "KrimsCodeCLI-Python/1.5.8"}
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+
+            if not data.get("ok"):
+                print(f"{Colors.RED}Connection failed: {data.get('error', 'Unknown error')}{Colors.RESET}")
+                return
+
+            config["discord_id"] = data.get("discordId")
+            config["discord_user"] = data.get("username")
+            config["discord_linked_at"] = os.times().elapsed
+            save_config(config)
+
+            bonus_msg = f"{Colors.GREEN} (+1,000 KC Link Bonus Awarded!){Colors.RESET}" if data.get("bonusAwarded") else ""
+            print(f"\n{Colors.CYAN}⚡ DISCORD IDENTITY LINKED SUCCESSFULLY!{Colors.RESET}")
+            print("─" * 60)
+            print(f"  Account     : {Colors.CYAN}@{data.get('username')}{Colors.RESET}")
+            print(f"  Discord ID  : {data.get('discordId')}")
+            print(f"  KC Vault    : {Colors.YELLOW}{data.get('balance', 0):,} KC{Colors.RESET}{bonus_msg}")
+            print("─" * 60)
+            print(f"{Colors.DIM}Use /claim for daily rewards directly in your terminal.{Colors.RESET}\n")
+        except Exception as e:
+            print(f"{Colors.RED}Failed to reach Krims rewards server: {e}{Colors.RESET}\n")
+
+    elif action == "unlink":
+        if "discord_id" not in config:
+            print(f"\n{Colors.YELLOW}No Discord account currently linked.{Colors.RESET}\n")
+            return
+        old_id = config.pop("discord_id", None)
+        config.pop("discord_user", None)
+        save_config(config)
+        print(f"\n{Colors.GREEN}✓ Disconnected Discord identity ({old_id}).{Colors.RESET}\n")
+
+    else:
+        # Status
+        disc_id = config.get("discord_id")
+        if not disc_id:
+            print(f"\n{Colors.YELLOW}⚡ KRIMS CODE • DISCORD IDENTITY{Colors.RESET}")
+            print("─" * 60)
+            print(f"  Status: {Colors.RED}✗ Not Linked{Colors.RESET}")
+            print("─" * 60)
+            print("  Link your account to earn +1,000 KC and claim daily terminal drops:")
+            print(f"  {Colors.CYAN}krims-pip discord connect <discord_id>{Colors.RESET}\n")
+            return
+
+        try:
+            req = urllib.request.Request(
+                f"{API_BASE}/api/cli/balance?discordId={disc_id}",
+                headers={"User-Agent": "KrimsCodeCLI-Python/1.5.8"}
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            bal = data.get("balance", 0)
+        except Exception:
+            bal = "Unavailable"
+
+        print(f"\n{Colors.CYAN}⚡ KRIMS CODE • DISCORD IDENTITY{Colors.RESET}")
+        print("─" * 60)
+        print(f"  Status     : {Colors.GREEN}✓ Connected{Colors.RESET}")
+        print(f"  Account    : {Colors.CYAN}@{config.get('discord_user', disc_id)}{Colors.RESET}")
+        print(f"  Discord ID : {disc_id}")
+        print(f"  KC Vault   : {Colors.YELLOW}{bal:,} KC{Colors.RESET}" if isinstance(bal, int) else f"  KC Vault   : {bal}")
+        print("─" * 60)
+        print(f"{Colors.DIM}Type /claim for daily rewards, or krims-pip discord unlink to disconnect.{Colors.RESET}\n")
+
+def handle_claim(config):
+    disc_id = config.get("discord_id")
+    if not disc_id:
+        print(f"\n{Colors.YELLOW}⚠️  No Discord Account Linked!{Colors.RESET}")
+        print("─" * 60)
+        print("Link your Discord ID first to claim KC drops directly into your vault:")
+        print(f"  {Colors.CYAN}krims-pip discord connect <your_discord_id>{Colors.RESET}")
+        print("─" * 60)
+        print(f"{Colors.DIM}First-time linking grants an instant +1,000 KC bonus!{Colors.RESET}\n")
+        return
+
+    print(f"\n{Colors.CYAN}🔄 Contacting the Krims Fleet Rewards Server...{Colors.RESET}")
+    try:
+        req_data = json.dumps({"discordId": disc_id}).encode("utf-8")
+        req = urllib.request.Request(
+            f"{API_BASE}/api/cli/claim",
+            data=req_data,
+            headers={"Content-Type": "application/json", "User-Agent": "KrimsCodeCLI-Python/1.5.8"}
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        if not data.get("ok"):
+            print(f"{Colors.RED}Claim failed: {data.get('error', 'Unknown error')}{Colors.RESET}")
+            return
+
+        if data.get("claimed"):
+            reward = data.get("reward", 250)
+            streak = data.get("streak", 1)
+            bal = data.get("balance", 0)
+            print(f"\n{Colors.GREEN}═════════════════════════════════════════════════════════════════{Colors.RESET}")
+            print(f"{Colors.GREEN}🎉 DAILY KC REWARD CLAIMED SUCCESSFULLY! 🚀{Colors.RESET}")
+            print("─" * 60)
+            print(f"  Account       : {Colors.CYAN}@{config.get('discord_user', disc_id)}{Colors.RESET}")
+            print(f"  Reward Earned : {Colors.YELLOW}+{reward:,} KC{Colors.RESET}")
+            print(f"  Daily Streak  : {Colors.CYAN}{streak} Day(s) Multiplier{Colors.RESET}")
+            print(f"  Total Vault   : {Colors.YELLOW}{bal:,} KC{Colors.RESET}")
+            print("─" * 60)
+            print(f"{Colors.DIM}Next claim available in 24 hours. View rewards: https://krims-bot-dashboard.vercel.app/rewards{Colors.RESET}")
+            print(f"{Colors.GREEN}═════════════════════════════════════════════════════════════════{Colors.RESET}\n")
+        else:
+            time_rem = data.get("timeRemaining", 0)
+            hrs = time_rem // (1000 * 60 * 60)
+            mins = (time_rem % (1000 * 60 * 60)) // (1000 * 60)
+            bal = data.get("balance", 0)
+            streak = data.get("streak", 1)
+            print(f"\n{Colors.YELLOW}⏳ DAILY COOLDOWN ACTIVE{Colors.RESET}")
+            print("─" * 60)
+            print(f"  Account     : {Colors.CYAN}@{config.get('discord_user', disc_id)}{Colors.RESET}")
+            print(f"  Cooldown    : {Colors.YELLOW}{hrs}h {mins}m remaining{Colors.RESET}")
+            print(f"  Current KC  : {Colors.YELLOW}{bal:,} KC{Colors.RESET}")
+            print(f"  Saved Streak: {streak} Day(s)")
+            print("─" * 60)
+            print(f"{Colors.DIM}Chat in the Discord server or use Krims Code to level up and earn passive KC!{Colors.RESET}\n")
+
+    except Exception as e:
+        print(f"{Colors.RED}Could not reach rewards server: {e}{Colors.RESET}\n")
 
 def print_banner(config, current_mode="titan"):
     c1 = Colors.hex('#FF3E3E') # Red-Orange
@@ -96,7 +256,7 @@ def print_banner(config, current_mode="titan"):
     ]
 
     info = [
-        f"   ⚡ {c4}KRIMS CODE COMMAND STATION v1.5.7{reset} • Welcome back, {c4}{username}{reset}",
+        f"   ⚡ {c4}KRIMS CODE COMMAND STATION v1.5.8{reset} • Welcome back, {c4}{username}{reset}",
         dim("   " + "─" * 58),
         f"     {dim}Workspace{reset} : {display_cwd}",
         f"     {dim}Mode{reset}      : {c4}{current_mode.upper()}{reset} {dim}— Ultimate reasoning fusion of Codex & Claude Code.{reset}",
@@ -124,15 +284,24 @@ def run_chat(config, model=None, provider=None):
     session = client.create_session()
 
     print_banner(config)
-    print(f"{Colors.DIM}Type 'exit' or 'quit' to terminate session. Ctrl+C to abort.{Colors.RESET}\n")
+    print(f"{Colors.DIM}Type 'exit' or 'quit' to terminate session. /claim for daily KC, /discord connect <id> to link.{Colors.RESET}\n")
 
     while True:
         try:
-            prompt = input(f"{Colors.hex('#00F2FF')}you > {Colors.RESET}")
-            if not prompt.strip():
+            prompt = input(f"{Colors.hex('#00F2FF')}you > {Colors.RESET}").strip()
+            if not prompt:
                 continue
-            if prompt.strip().lower() in ['exit', 'quit']:
+            if prompt.lower() in ['exit', 'quit']:
                 break
+            
+            # Slash commands in chat
+            if prompt.startswith("/discord"):
+                parts = prompt.split()
+                handle_discord(parts[1:], config)
+                continue
+            if prompt.lower() in ["/claim", "/daily", "/kc", "/balance"]:
+                handle_claim(config)
+                continue
             
             print(f"{Colors.DIM}krims is composing response...{Colors.RESET}")
             res = session.ask(prompt)
@@ -194,21 +363,29 @@ def main():
     cmd = args[0].lower()
     if cmd == "chat":
         run_chat(config)
+    elif cmd in ["claim", "daily", "balance", "kc"]:
+        handle_claim(config)
+    elif cmd in ["discord", "link"]:
+        handle_discord(args[1:], config)
     elif cmd == "ask" and len(args) >= 2:
         run_ask(args[1], config)
     elif cmd == "config":
         handle_config(args[1:], config)
     elif cmd in ["version", "-v", "--version"]:
-        print("Krims Code CLI v1.5.7 (Native Python Edition)")
+        print("Krims Code CLI v1.5.8 (Native Python Edition)")
     elif cmd in ["help", "-h", "--help"]:
         print("Krims Code CLI — Native Python Edition")
         print("\nCommands:")
-        print("  chat                  Start stateful chat loop (default)")
-        print("  ask <prompt>          Get single answer for prompt")
-        print("  config <get/set/list> Get or set keys")
-        print("  version               Display version info")
+        print("  chat                       Start stateful chat loop (default)")
+        print("  claim | daily              Claim daily KC rewards (+250 KC)")
+        print("  discord connect <id>       Link Discord account to Krims Fleet (+1,000 KC bonus)")
+        print("  discord                    View linked Discord account and KC vault")
+        print("  ask <prompt>               Get single answer for prompt")
+        print("  config <get/set/list>      Get or set keys")
+        print("  version                    Display version info")
     else:
         # Fallback to ask if they just write a prompt directly
+        run_ask(" ".join(args), config)
         run_ask(" ".join(args), config)
 
 if __name__ == "__main__":
