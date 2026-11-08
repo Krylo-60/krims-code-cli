@@ -682,6 +682,9 @@ function showHelp(aiConfig) {
   console.log(colors.brand("  ⚡ KRIMS CODE CLI COMMANDS"));
   console.log(separator("─"));
   console.log("");
+  console.log(keyValue("/claim", "Claim daily KryloCoins (KC) reward & streak bonus"));
+  console.log(keyValue("/discord connect <id>", "Link your Discord account to earn +1,000 KC!"));
+  console.log(keyValue("/discord", "View Discord sync status & connected KC balance"));
   console.log(keyValue("/", "Show this help menu"));
   console.log(keyValue("/help", "Show this help menu"));
   console.log(keyValue("/mode <name>", "Switch mode (" + Object.keys(MODES).join(", ") + ")"));
