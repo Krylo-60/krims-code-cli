@@ -3,7 +3,7 @@ import os
 
 setup(
     name="krims-code-cli",
-    version="1.5.8",
+    version="1.5.9",
     author="Krishiv PB",
     author_email="krylobloxyt@gmail.com",
     description="Krims Code AI — Universal AI Gateway CLI (Native Python Edition)",

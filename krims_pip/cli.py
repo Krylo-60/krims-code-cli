@@ -246,18 +246,18 @@ def print_banner(config, current_mode="titan"):
         active_names = active_names[:max_val_width - 3] + "..."
 
     logo = [
-        c1("  █▄     ▄█"),
-        c2("  ██    ██ "),
-        c3("  ██ ▄█    "),
-        c4("  ███▀     "),
-        c5("  ██ ▀█    "),
-        c6("  ██    ██ "),
-        c7("  █▀     ▀█")
+        f"{c1}  █▄     ▄█{reset}",
+        f"{c2}  ██    ██ {reset}",
+        f"{c3}  ██ ▄█    {reset}",
+        f"{c4}  ███▀     {reset}",
+        f"{c5}  ██ ▀█    {reset}",
+        f"{c6}  ██    ██ {reset}",
+        f"{c7}  █▀     ▀█{reset}"
     ]
 
     info = [
-        f"   ⚡ {c4}KRIMS CODE COMMAND STATION v1.5.8{reset} • Welcome back, {c4}{username}{reset}",
-        dim("   " + "─" * 58),
+        f"   ⚡ {c4}KRIMS CODE COMMAND STATION v1.5.9{reset} • Welcome back, {c4}{username}{reset}",
+        f"   {dim}{'─' * 58}{reset}",
         f"     {dim}Workspace{reset} : {display_cwd}",
         f"     {dim}Mode{reset}      : {c4}{current_mode.upper()}{reset} {dim}— Ultimate reasoning fusion of Codex & Claude Code.{reset}",
         f"     {dim}Network{reset}   : {mesh_status}",
@@ -372,7 +372,7 @@ def main():
     elif cmd == "config":
         handle_config(args[1:], config)
     elif cmd in ["version", "-v", "--version"]:
-        print("Krims Code CLI v1.5.8 (Native Python Edition)")
+        print("Krims Code CLI v1.5.9 (Native Python Edition)")
     elif cmd in ["help", "-h", "--help"]:
         print("Krims Code CLI — Native Python Edition")
         print("\nCommands:")
@@ -385,7 +385,6 @@ def main():
         print("  version                    Display version info")
     else:
         # Fallback to ask if they just write a prompt directly
-        run_ask(" ".join(args), config)
         run_ask(" ".join(args), config)
 
 if __name__ == "__main__":
